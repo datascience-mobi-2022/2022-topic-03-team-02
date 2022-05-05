@@ -49,3 +49,4 @@
 - why are there more than one peak for each condition? -> possible answer: different 3D-orientation
 - why are there left shifts and right shifts? (komplex should always be in higher fraction than a single protein)
 - regression analysis? modell for identifying false positive R-Deep?
+- Can we upload our data on GitHub? (we should treat it confidential)
