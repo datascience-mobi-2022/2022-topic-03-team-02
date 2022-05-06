@@ -17,7 +17,7 @@ knitr::opts_chunk$set(cache = TRUE)
 
 The data frame is loaded as describe on the Github page for project 3.
 ```{r}
-MS_Table <- read.table("~/Desktop/RDeeP_HeLa_Mitosis.csv", header = TRUE, row.names = 1, sep = ";")
+MS_Table <- read.table("RDeeP_HeLa_Mitosis.csv", header = TRUE, row.names = 1, sep = ";")
 ```
 
 ```{r}
