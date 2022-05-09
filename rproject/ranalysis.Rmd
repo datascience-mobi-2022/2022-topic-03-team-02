@@ -37,7 +37,7 @@ sum(apply(MS_Table, 2, is.numeric)) == ncol(MS_Table)
 glimpse(MS_Table)
 ```
 
-Every column's data type is numeric (double)!
+Every column's data type is numeric (double).
 
 We want to remove every row that has only zeros or negative numbers in at least one of the 3 replicates for each condition (RNase or Ctrl). Those rows will not help us to identify shifts and therefore to identify RNA-depending proteins.
 ```{r}
