@@ -6,7 +6,7 @@
 
 
 ## analysis steps
-### part 1 - describing data, reprobuccibility, normalization
+### part 1 - describing data, reproducibility, normalization
 - describing structure of data frame
 - normalization of data: the amount of each protein should be 100 for every replicate (e.g. amount of protein 1 in all 25 fractions of Ctrl_Rep1 should be 100)
 - plotting distribution of random proteins to show data
@@ -49,4 +49,4 @@
 - why are there more than one peak for each condition? -> possible answer: different 3D-orientation
 - why are there left shifts and right shifts? (komplex should always be in higher fraction than a single protein)
 - regression analysis? modell for identifying false positive R-Deep?
-- Can we upload our data on GitHub? (we should treat it confidential)
+- Can we upload our data on GitHub? (we should treat it confidential) -> already solved!!! (we used .gitignore)

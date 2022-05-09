@@ -28,3 +28,10 @@ head(rownames(MS_Table),12)
 head(colnames(MS_Table),12)
 ```
 
+## data cleanup
+
+## describing data, reproducibilty, normalization
+
+ 
+
+
