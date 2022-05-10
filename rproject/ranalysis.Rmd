@@ -168,3 +168,29 @@ plot(
 abline(v = which(Ctrl_Rep1[5353, ] == max(Ctrl_Rep1[5353, ])), col = "blue")
 abline(v = which(RNase_Rep1[5353, ] == max(RNase_Rep1[5353, ])), col = "red")
 ```
+
+```{r}
+par(mfrow = c(1, 2))
+plot(
+  1:25,
+  Ctrl_Rep1[1811, ],
+  type = "l",
+  main = rownames(Ctrl_Rep1)[1811],
+  xlab = "Fraction",
+  ylab = "protein amount"
+)
+abline(v = which(Ctrl_Rep1[1811, ] == max(Ctrl_Rep1[1811, ])), col = "blue")
+abline(v = which(RNase_Rep1[1811, ] == max(RNase_Rep1[1811, ])), col = "red")
+
+plot(
+  1:25,
+  RNase_Rep1[1811, ],
+  type = "l",
+  main = rownames(RNase_Rep1)[1811],
+  xlab = "Fraction",
+  ylab = "protein amount"
+)
+abline(v = which(Ctrl_Rep1[1811, ] == max(Ctrl_Rep1[1811, ])), col = "blue")
+abline(v = which(RNase_Rep1[1811, ] == max(RNase_Rep1[1811, ])), col = "red")
+```
+
