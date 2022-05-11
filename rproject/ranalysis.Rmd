@@ -175,7 +175,7 @@ plot(
   1:25,
   Ctrl_Rep1[1811, ],
   type = "l",
-  main = rownames(Ctrl_Rep1)[1811],
+  main = paste(rownames(Ctrl_Rep1)[1811],"_Ctrl_Rep1",sep = ""),
   xlab = "Fraction",
   ylab = "protein amount"
 )
@@ -186,7 +186,7 @@ plot(
   1:25,
   RNase_Rep1[1811, ],
   type = "l",
-  main = rownames(RNase_Rep1)[1811],
+  main = paste(rownames(RNase_Rep1)[1811],"_RNase_Rep1",sep = ""),
   xlab = "Fraction",
   ylab = "protein amount"
 )
