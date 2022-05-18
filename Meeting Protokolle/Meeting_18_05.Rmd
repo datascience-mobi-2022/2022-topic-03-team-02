@@ -20,3 +20,14 @@ Nicht alles coden und dann am Ende den Report als ganzes.
 1.Coding/Daten Analyse
 2.Reportschreiben
 3.Präsentation
+
+### To do:
+
+1.Herausfinden wie wir False-Positive Rate reduzieren können.
+2.Wie können wir Reproduzierbarkeit nachweisen?
+
+
+### Anmerkungen zum Code:
+- Wir gehen (vorerst) mit nuller Reihen um, 
+indem wir die Reihen in denen **alle** Werte null sind streichen da sie keine 
+Aussagekraft haben und die mit einzelnen nullen streichen, da es nur 4 Proteine sind und erheblichen Mehraufwand für geringen Gewinn bedeuten würde.
