@@ -1,12 +1,178 @@
 ---
 title: "Analysis Part 1"
-author: "Michel Tarnow"
+author: "Michel, Lennart, Michèle, Sebastian"
 date: "`r Sys.Date()`"
 output: html_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(cache = TRUE)
+library("tidyverse")
 ```
+
+## load data
+
+The data frame is loaded as describe on the Github page for project 3.
+```{r}
+MS_Table <- read.table("RDeeP_HeLa_Mitosis.csv", header = TRUE, row.names = 1, sep = ";")
+```
+
+```{r}
+head(rownames(MS_Table),12)
+```
+
+```{r}
+head(colnames(MS_Table),12)
+```
+
+## data cleanup
+
+First, we want to check whether every column's data type is numeric.
+```{r}
+sum(apply(MS_Table, 2, is.numeric)) == ncol(MS_Table)
+glimpse(MS_Table)
+```
+
+Every column's data type is numeric (double)! 
+
+We want to remove every row that has only zeros or negative numbers in at least one of the 3 replicates for each condition (RNase or Ctrl). Those rows will not help us to identify shifts and therefore to identify RNA-depending proteins.
+```{r}
+del_row <- c()
+for (i in c("Ctrl_Rep1", "Ctrl_Rep2", "Ctrl_Rep3", "RNase_Rep1", "RNase_Rep2", "RNase_Rep3")) {
+  for (j in 1:nrow(MS_Table)) {
+    if (sum(MS_Table[j, grep(i, colnames(MS_Table))]) <= 0) {
+      del_row <- append(del_row, j)
+    }
+  }
+}
+del_row_sort <- sort(unique(del_row))
+del_row_sort
+```
+
+Therefore, we remove rows 691, 3045, 3575, 4057, 5568, 6732 and 7112.
+```{r}
+MS_Table <- MS_Table[-del_row_sort,]
+```
+
+All in all, we removed 7 rows that contained only zeros in at least one of the replicates of the two conditions (RNase or Control).
+
+## describing the structure of our data
+
+Dimension of our data frame:
+```{r}
+dim(MS_Table)
+```
+
+Some rownames:
+```{r}
+head(rownames(MS_Table))
+```
+
+
+Some columnnames:
+```{r}
+head(colnames(MS_Table))
+```
+
+# normalize protein amount per fraction
+
+In the first normalization step, we want to set every protein's amount within one replicate to be 100 per conditions. For example, the protein represented by row 1 has a sum over all 25 fractions of 100 in Ctrl_Rep1. To archive this, we begin with building 6 smaller data frames for every replicate of each condition.
+```{r}
+# create df that contains all rows of control replicate 1
+x <- grep("Ctrl_Rep1", colnames(MS_Table))
+Ctrl_Rep1 <- MS_Table[, x]
+
+# create df that contains all rows of RNase replicate 1
+y <- grep("RNase_Rep1", colnames(MS_Table))
+RNase_Rep1 <- MS_Table[, y]
+
+# create df that contains all rows of control replicate 2
+z <- grep("Ctrl_Rep2", colnames(MS_Table))
+Ctrl_Rep2 <- MS_Table[, z]
+
+# create df that contains all rows of RNase replicate 2
+a <- grep("RNase_Rep2", colnames(MS_Table))
+RNase_Rep2 <- MS_Table[, a]
+
+# create df that contains all rows of control replicate 3
+b <- grep("Ctrl_Rep3", colnames(MS_Table))
+Ctrl_Rep3 <- MS_Table[, b]
+
+# create df that contains all rows of RNase replicate 3
+c <- grep("RNase_Rep3", colnames(MS_Table))
+RNase_Rep3 <- MS_Table[, c]
+```
+
+Following, we can set each row of every replicate's data frame to have a sum of 100.
+```{r}
+# normalization step 1 of control replicate 1
+for (i in 1:nrow(Ctrl_Rep1)) {
+  x <- sum(Ctrl_Rep1[i, ]) / 100
+  Ctrl_Rep1[i, ] = Ctrl_Rep1[i, ] / x
+}
+
+# normalization step 1 of RNase replicate 1
+for (i in 1:nrow(RNase_Rep1)) {
+  x <- sum(RNase_Rep1[i, ]) / 100
+  RNase_Rep1[i, ] = RNase_Rep1[i, ] / x
+}
+
+# normalization step 1 of control replicate 2
+for (i in 1:nrow(Ctrl_Rep2)) {
+  x <- sum(Ctrl_Rep2[i, ]) / 100
+  Ctrl_Rep2[i, ] = Ctrl_Rep2[i, ] / x
+}
+
+# normalization step 1 of RNase replicate 2
+for (i in 1:nrow(RNase_Rep2)) {
+    x <- sum(RNase_Rep2[i, ]) / 100
+    RNase_Rep2[i, ] = RNase_Rep2[i, ] / x
+}
+
+# normalization step 1 of control replicate 3
+for (i in 1:nrow(Ctrl_Rep3)) {
+  x <- sum(Ctrl_Rep3[i, ]) / 100
+  Ctrl_Rep3[i, ] = Ctrl_Rep3[i, ] / x
+}
+
+# normalization step 1 of RNase replicate 3
+for (i in 1:nrow(RNase_Rep3)) {
+  x <- sum(RNase_Rep3[i, ]) / 100
+  RNase_Rep3[i, ] = RNase_Rep3[i, ] / x
+}
+```
+
+Now, we can verify if the sum of every row really equals 100. If everything went correctly, we should get 6 times TRUE!
+```{r}
+sum(Ctrl_Rep1) / 100 == nrow(Ctrl_Rep1)
+sum(RNase_Rep1) / 100 == nrow(RNase_Rep1)
+sum(Ctrl_Rep2) / 100 == nrow(Ctrl_Rep2)
+sum(RNase_Rep2) / 100 == nrow(RNase_Rep2)
+sum(Ctrl_Rep3) / 100 == nrow(Ctrl_Rep3)
+sum(RNase_Rep3) / 100 == nrow(RNase_Rep3)
+```
+
+Seems like everything went fine! Now, we can combine the replicate's data frames again to make one single data frame containing all normalized data.
+
+```{r}
+df_normalized <- as.data.frame(cbind(Ctrl_Rep1, Ctrl_Rep2, Ctrl_Rep3, RNase_Rep1, RNase_Rep2, RNase_Rep3))
+dim(df_normalized) == dim(MS_Table)
+sum(df_normalized[1,]) / 6 == 100
+```
+
+We can save this data frame as a new file **RDeeP_HeLa_Mitosis_normalized.csv**:
+
+```{r}
+#write.csv(df_normalized, "RDeeP_HeLa_Mitosis_normalized.csv", row.names = TRUE)
+```
+
+```{r}
+#df_normalized1 <- read.table("RDeeP_HeLa_Mitosis_normalized.csv", header = TRUE, row.names = 1, sep = ",")
+#sum(df_normalized[1,]) / 6 == 100
+```
+
+
+
 
 
