@@ -1,0 +1,22 @@
+---
+title: "18_05_Meeting"
+output: html_document
+date: '2022-05-18'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+*******
+
+## Organisation Projekt:
+Code prinzipiell parallel zu Report.
+Report leicht naträglich zum Code schreiben aber durchgängig. 
+Nicht alles coden und dann am Ende den Report als ganzes.
+
+### Aufteilen der Arbeitsbereiche:
+
+1.Coding/Daten Analyse
+2.Reportschreiben
+3.Präsentation
