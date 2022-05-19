@@ -75,7 +75,7 @@ Some columnnames:
 head(colnames(MS_Table))
 ```
 
-# normalize protein amount per fraction
+## normalize protein amount per fraction
 
 In the first normalization step, we want to set every protein's amount within one replicate to be 100 per conditions. For example, the protein represented by row 1 has a sum over all 25 fractions of 100 in Ctrl_Rep1. To archive this, we begin with building 6 smaller data frames for every replicate of each condition.
 ```{r}
@@ -161,16 +161,96 @@ dim(df_normalized) == dim(MS_Table)
 sum(df_normalized[1,]) / 6 == 100
 ```
 
-We can save this data frame as a new file **RDeeP_HeLa_Mitosis_normalized.csv**:
+We can save this data frame as a new file **RDeeP_HeLa_Mitosis_normalized.rds**:
 
 ```{r}
-#write.csv(df_normalized, "RDeeP_HeLa_Mitosis_normalized.csv", row.names = TRUE)
+saveRDS(df_normalized, file = "DeeP_HeLa_Mitosis_normalized.rds")
 ```
 
 ```{r}
-#df_normalized1 <- read.table("RDeeP_HeLa_Mitosis_normalized.csv", header = TRUE, row.names = 1, sep = ",")
-#sum(df_normalized[1,]) / 6 == 100
+df_normalized <- readRDS("DeeP_HeLa_Mitosis_normalized.rds")
+sum(df_normalized[1,]) / 6 == 100
 ```
+
+## evaluating reproducibility of our data
+
+We want to evaluate the reproducibility of our data by computing the correlation between the replicates of the two conditions.
+
+## combining replicates using mean value
+
+In this step, we want to combine the three replicates of every condition by using the mean value of the three replicates' values. To do so, we first split the `df_normalized` data frame into one data frame containing only the control replicates and one data frame containing only the RNase replicates.
+
+```{r}
+df_Ctrl <- df_normalized[, grep("Ctrl", colnames(df_normalized))]
+df_RNase <- df_normalized[, grep("RNase", colnames(df_normalized))]
+```
+
+Now, we can process the two data frames so that they contain only the mean values of the triplicates.
+
+```{r}
+# control condition
+df_Ctrl_c <- data.frame()
+for (i in 1:nrow(df_Ctrl)) {
+  for (j in 1:25) {
+    x <- mean(c(df_Ctrl[i, j], df_Ctrl[i, j + 25], df_Ctrl[i, j + 50]))
+    df_Ctrl_c[i, j] = x
+  }
+}
+
+# RNase condition
+df_RNase_c <- data.frame()
+for (i in 1:nrow(df_RNase)) {
+  for (j in 1:25) {
+    x <- mean(c(df_RNase[i, j], df_RNase[i, j + 25], df_RNase[i, j + 50]))
+    df_RNase_c[i, j] = x
+  }
+}
+```
+
+```{r}
+# test if mean values in df_Ctrl_c are computed correctly
+score1 <- 0
+for (i in 1:nrow(df_Ctrl)) {
+  for (j in 1:25) {
+    if (mean(c(df_Ctrl[i, j], df_Ctrl[i, j + 25], df_Ctrl[i, j + 50])) != df_Ctrl_c[i, j]) {
+      score1 <- score1 + 1
+    }
+  }
+}
+score1 == 0
+
+# test if mean values in df_RNase_c are computed correctly
+score2 <- 0
+for (i in 1:nrow(df_RNase)) {
+  for (j in 1:25) {
+    if (mean(c(df_RNase[i, j], df_RNase[i, j + 25], df_RNase[i, j + 50])) != df_RNase_c[i, j]) {
+      score2 <- score2 + 1
+    }
+  }
+}
+score2 == 0
+```
+
+Now both, the Ctrl and the RNase data frames, consist of the mean values of the replicates and are scaled to 100 units of each protein. We can now join the both data frames to one again, containing all proteins but only 50 instead of 150 columns.
+
+```{r}
+df_normalized_combined <- cbind(df_Ctrl_c, df_RNase_c)
+rownames(df_normalized_combined) <- rownames(MS_Table)
+
+cnc <- sapply(1:25, function(x) {paste("Fraction", x, "_Ctrl", sep = "")})
+cnr <- sapply(1:25, function(x) {paste("Fraction", x, "_RNase", sep = "")})
+colnames(df_normalized_combined)[1:25] <- cnc
+colnames(df_normalized_combined)[26:50] <- cnr
+```
+
+Lastly, we can save that data frame as a file again to avoid running the code above again and again.
+
+```{r}
+saveRDS(df_normalized_combined, file = "DeeP_HeLa_Mitosis_normalized_combined.rds")
+```
+
+
+
 
 
 
