@@ -1,0 +1,17 @@
+---
+title: "Analysis Part 2"
+author: "Michèle, Lennart, Michel, Sebastian"
+date: "5/27/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## load data
+ 
+```{r}
+df_normalized_combined <- readRDS("DeeP_HeLa_Mitosis_normalized_combined.rds")
+```
+
