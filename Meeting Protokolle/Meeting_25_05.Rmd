@@ -1,0 +1,25 @@
+---
+title: "Meeting 25.05."
+author: "Basti"
+date: '2022-05-25'
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+##Michel Idee:
+
+Wenn replikat eine null hat: Null durch mittelwert der beiden anderen ersetzen
+
+##Tasks:
+
+1.Data cleaning, nullen auffüllen mit mittelwerten der beiden replikate die gemessen wurden -> basti
+2.reproducibility überprüfen (byrow) -> michel
+3.descriptive statistics im kleinen rahmen -> basti
+4.part 2 find global maxima -> michel/e (mach neue datei dafür)
+5.Introduction schreiben -> lenny
+
