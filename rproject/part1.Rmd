@@ -174,7 +174,72 @@ sum(df_normalized[1,]) / 6 == 100
 
 ## evaluating reproducibility of our data
 
-We want to evaluate the reproducibility of our data by computing the correlation between the replicates of the two conditions.
+We want to evaluate the reproducibility of our data by computing the correlation between the replicates of the two conditions for every protein. By doing it that way, we can not only evaluate similarities between the replicates of one condition, we can also sort out single proteins which data do not seem to be reproducible. (First, we create a vector for every protein containing all its values of one replicate, for every replicate and condition.) 
+
+
+```{r}
+tdf_normalized <- as.data.frame(t(df_normalized))
+
+c1c2 <- c()
+for (i in 1:ncol(tdf_normalized)) {
+  c1c2 <- append(c1c2, (cor(tdf_normalized[1:25, i], tdf_normalized[26:50, i])))
+}
+
+c1c3 <- c()
+for (i in 1:ncol(tdf_normalized)) {
+  c1c3 <- append(c1c3, (cor(tdf_normalized[1:25, i], tdf_normalized[51:75, i])))
+}
+  
+c2c3 <- c()
+for (i in 1:ncol(tdf_normalized)) {
+  c2c3 <- append(c2c3, (cor(tdf_normalized[26:50, i], tdf_normalized[51:75, i])))
+}
+  
+r1r2 <- c()
+for (i in 1:ncol(tdf_normalized)) {
+  r1r2 <- append(r1r2, (cor(tdf_normalized[76:100, i], tdf_normalized[101:125, i])))
+}
+  
+r1r3 <- c()
+for (i in 1:ncol(tdf_normalized)) {
+  r1r3 <- append(r1r3, (cor(tdf_normalized[76:100, i], tdf_normalized[126:150, i])))
+}
+  
+r2r3 <- c()
+for (i in 1:ncol(tdf_normalized)) {
+  r2r3 <- append(r2r3, (cor(tdf_normalized[101:125, i], tdf_normalized[126:150, i])))
+}
+```
+
+```{r}
+cor_mat <- cbind(c1c2, c1c3, c2c3, r1r2, r1r3, r2r3)
+sum(cor_mat < 0.5)
+sum(c1c2 < 0.5)
+sum(c1c3 < 0.5)
+sum(c2c3 < 0.5)
+sum(r1r2 < 0.5)
+sum(r1r3 < 0.5)
+sum(r2r3 < 0.5)
+```
+
+```{r}
+colnames(tdf_normalized)[which(r1r3 == min(r1r3))]
+
+df_plot1 <- data.frame(x = tdf_normalized$K2C1_HUMAN[76:100], y = tdf_normalized$K2C1_HUMAN[126:150])
+ggplot(df_plot1, aes(x, y)) +
+  geom_point() +
+  geom_smooth()
+```
+```{r}
+set.seed(124)
+x <- which(c1c2 < 0.97)
+colnames(tdf_normalized)[sample(which(c1c2[x] > 0.90),1 )]
+
+df_plot2 <- data.frame(x = tdf_normalized$ECE1_HUMAN[1:25] , y = tdf_normalized$ECE1_HUMAN[26:50])
+ggplot(df_plot2, aes(x, y)) +
+  geom_point() +
+  geom_smooth()
+```
 
 ## combining replicates using mean value
 
