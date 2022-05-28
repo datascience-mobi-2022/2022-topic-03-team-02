@@ -15,3 +15,71 @@ knitr::opts_chunk$set(echo = TRUE)
 df_normalized_combined <- readRDS("DeeP_HeLa_Mitosis_normalized_combined.rds")
 ```
 
+```{r}
+View(df_normalized_combined)
+```
+
+
+```{r}
+dim(df_normalized_combined)
+```
+```{r}
+d <- dim(df_normalized_combined)
+rows <- d[1] 
+columns <- d[2]
+fractions_ctrl <- 25
+fractions_RNase <- 25
+```
+```{r}
+#Dataframe erstellen 
+data_frame_maxima_ctrl <- data.frame()
+#spaltenname <- c("protein_names", "fraction_ctrl_max", "fraction_ctrl_max_column", "fraction_rna_max", "fraction_ctrl_max_colum")
+#colnames(data_frame_maxima_ctrl) <- spaltenname
+
+
+
+proteins <- rownames(df_normalized_combined)
+fractionsnames <- colnames(df_normalized_combined)
+for (z in 1:rows){
+ # print(proteins[z])
+  proteinname <- proteins[z] #proteinname zwischenspeichern 
+    #Maximum der Ctrl suchen 
+    #maximafc <- max(df_normalized_combined[z,1:25])
+    #print(maximafc)
+    #maximarna <- max (df_normalized_combined[z,26:50])
+    #print(maximarna)
+  
+  
+  maxfc <- df_normalized_combined[z,1]
+  maxfcc <- 1
+  for (fc in 2:25) {
+    if (maxfc < df_normalized_combined[z,fc]){
+      maxfc <- df_normalized_combined[z,fc]
+      maxfcc <- fc
+    }
+  }
+ # print(maxfc)
+ # print(fractionsnames[maxfcc])
+  
+  
+  maxrna <- df_normalized_combined[z,26]
+  maxfcr <- 26
+  for (fc in 27:50) {
+    if (maxrna < df_normalized_combined[z,fc]){
+      maxrna <- df_normalized_combined[z,fc]
+      maxfcr <- fc
+    }
+  }
+ # print(maxfc)
+ # print(fractionsnames[maxfcr])
+     #"protein_names", "fraction_ctrl_max", "fraction_ctrl_max_column", "fraction_rna_max", 
+     #"fraction_ctrl_max_colum"
+data_frame_maxima_ctrl <- rbind(data_frame_maxima_ctrl, data.frame(protein_name = proteinname, fraction_ctrl_max = maxfc, fraction_ctrl_max_column = fractionsnames[maxfcc], fraction_rna_max = maxrna, fraction_rna_max_column = fractionsnames[maxfcr]))
+}
+
+View(data_frame_maxima_ctrl)
+
+dim(data_frame_maxima_ctrl)
+```
+
+
