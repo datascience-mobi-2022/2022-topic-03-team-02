@@ -176,7 +176,6 @@ sum(df_normalized[1,]) / 6 == 100
 
 We want to evaluate the reproducibility of our data by computing the correlation between the replicates of the two conditions for every protein. By doing it that way, we can not only evaluate similarities between the replicates of one condition, we can also sort out single proteins which data do not seem to be reproducible. (First, we create a vector for every protein containing all its values of one replicate, for every replicate and condition.) 
 
-
 ```{r}
 tdf_normalized <- as.data.frame(t(df_normalized))
 
@@ -211,6 +210,7 @@ for (i in 1:ncol(tdf_normalized)) {
 }
 ```
 
+Now, we can check how many and which values are below a threshold of r = 0.5.
 ```{r}
 cor_mat <- cbind(c1c2, c1c3, c2c3, r1r2, r1r3, r2r3)
 sum(cor_mat < 0.5)
@@ -223,22 +223,72 @@ sum(r2r3 < 0.5)
 ```
 
 ```{r}
-colnames(tdf_normalized)[which(r1r3 == min(r1r3))]
+tc <- c()
 
-df_plot1 <- data.frame(x = tdf_normalized$K2C1_HUMAN[76:100], y = tdf_normalized$K2C1_HUMAN[126:150])
-ggplot(df_plot1, aes(x, y)) +
-  geom_point() +
-  geom_smooth()
+for (i in 1:ncol(tdf_normalized)) {
+  if (c1c2[i] < 0.5) {
+    tc <- append(tc, colnames(tdf_normalized)[i])
+  } 
+}
+for (i in 1:ncol(tdf_normalized)) {
+  if (c1c3[i] < 0.5) {
+    tc <- append(tc, colnames(tdf_normalized)[i])
+  } 
+}
+for (i in 1:ncol(tdf_normalized)) {
+  if (c2c3[i] < 0.5) {
+    tc <- append(tc, colnames(tdf_normalized)[i])
+  } 
+}
+for (i in 1:ncol(tdf_normalized)) {
+  if (r1r2[i] < 0.5) {
+    tc <- append(tc, colnames(tdf_normalized)[i])
+  } 
+}
+for (i in 1:ncol(tdf_normalized)) {
+  if (r1r3[i] < 0.5) {
+    tc <- append(tc, colnames(tdf_normalized)[i])
+  } 
+}
+for (i in 1:ncol(tdf_normalized)) {
+  if (r2r3[i] < 0.5) {
+    tc <- append(tc, colnames(tdf_normalized)[i])
+  } 
+}
 ```
+
 ```{r}
+length(unique(tc))
+```
+Seems like 36 proteins have replicates that do not correlate well with each other.
+
+To visualize the analysis we just performed, we can plot two replicates which are not strongly correlated and two replicates which are strongly correlated.
+```{r}
+par(mfrow = c(1, 2))
+
+# no strong correlation
+colnames(tdf_normalized)[which(r1r3 == min(r1r3))]
+df_plot1 <-
+  data.frame(x = tdf_normalized$K2C1_HUMAN[76:100], y = tdf_normalized$K2C1_HUMAN[126:150])
+plot1 <- ggplot(df_plot1, aes(x, y)) +
+  geom_point() +
+  geom_smooth() +
+  labs(x = "K2C1_HUMAN RNase Rep1", y = "K2C1_HUMAN RNase Rep3")
+
+# strong correlation
 set.seed(124)
 x <- which(c1c2 < 0.97)
-colnames(tdf_normalized)[sample(which(c1c2[x] > 0.90),1 )]
+colnames(tdf_normalized)[sample(which(c1c2[x] > 0.90), 1)]
 
-df_plot2 <- data.frame(x = tdf_normalized$ECE1_HUMAN[1:25] , y = tdf_normalized$ECE1_HUMAN[26:50])
-ggplot(df_plot2, aes(x, y)) +
+df_plot2 <-
+  data.frame(x = tdf_normalized$ECE1_HUMAN[1:25] , y = tdf_normalized$ECE1_HUMAN[26:50])
+plot2 <- ggplot(df_plot2, aes(x, y)) +
   geom_point() +
-  geom_smooth()
+  geom_smooth() +
+  labs(x = "ECE1_HUMAN Ctrl Rep1", y = "ECE1_HUMAN Ctrl Rep2")
+
+# plot
+cowplot::plot_grid(plot1, plot2, labels = "AUTO")
 ```
 
 ## combining replicates using mean value
