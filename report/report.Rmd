@@ -1,37 +1,39 @@
 ---
-#title: "Report"
-#author: "MT, MB, LM, SR"
-#date: "`r Sys.Date()`"
-output: pdf_document
-  
+output:
+  pdf_document: default
+  word_document: default
+
 fontsize: 12pt
 geometry: margin = 2.5cm
 linestretch: 1.5
-
-header-includes:
-  - \usepackage{helvet}
-  - \usepackage[T1]{fontenc}
-  - \renewcommand\familydefault{\sfdefault}
-bibliography: references.bib
+#header-includes:
+#- \usepackage{helvet}
+#- \usepackage[T1]{fontenc}
+#- \renewcommand\familydefault{\sfdefault}
+#bibliography: references.bib
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-# **Report**
+\
+\
+\
 
-Contents:
+# \Huge Data Analysis Project 2022 \newline \large Report
 
--   general definition RBPs
+### Institute of Pharmacy and Molecular Biotechnology
 
--   how RNA binding occurs
+\
+Topic 03: Proteome-wide Screen for RNA-dependent Proteins \newline Sub-project 2: HeLa Cells Synchronized in Mitosis \newline\
+Supervisor: Dr. Maïwen Caudron-Herger Tutor: Niklas Engel
 
--   where RBPs are involved in (normal function and disease)
+Students: Michel Tarnow, Michèle Bennek, Lennart Müller, Sebastian Rickert \newline Date: 20.07.2022
 
--   concept of RNA dependence
+\newpage
 
--   how our data was obtained
+# **Table Of Contents**
 
 \newpage
 
@@ -46,6 +48,10 @@ Since RBPs are key players in RNA metabolism, their malfunction has been associa
 While the study and quantification of RBPs has received much attention in previous research, the exact number of mammalian RBPs remains a matter of debate. Techniques for proteome-wide screening of RBPs in the past heavily relied on pull-down assays of polyadenylated RBPs (Beckmann et al., 2015; Castello et al., 2012), protease digestion (Mullari et al., 2017) or UV cross-linking (Urdaneta et al., 2019), each method having its advantages and shortcomings. Thus, current estimations about the number of RBPs remain largely inconsistent across studies, leading only to a small consensus set of around 200 proteins (Caudron-Herger et al., 2019).
 
 While not devoid of its own limitations, the here presented method provides a novel approach to the proteome-wide screening of RBPs with the goal of validating the core set of RBPs previously defined while also contributing to adding new proteins to the number of possible RBP candidates.\
-For this purpose, the notion of RNA dependence was introduced, defining a protein as RNA dependent when its interactome depends on RNA, while binding to RNA is sufficient but not necessary to qualify as RNA dependent. Thus, every RNA binding protein is RNA dependent, but not every RNA dependent protein is RNA binding.
+For this purpose, the notion of RNA dependence was introduced, defining a protein as RNA dependent when its interactome depends on RNA, while binding to RNA is sufficient but not necessary to qualify as RNA dependent. Thus, every RNA binding protein is RNA dependent, but not every RNA dependent protein is RNA binding (Caudron-Herger et al., 2019).
 
-Methoden
+The method here employed relies on the differential migration pattern of proteins in a sucrose density gradient ultracentrifugation in the presence or absence of RNA.\
+In density gradient centrifugation, macromolecules such as proteins are forced through a density gradient until they find a density equal to their own (Farrell, 2010). Thereby the rate of sedimentation is function of size, shape and density of the macromolecules, as well as density and viscosity of the gradient and applied centrifugal force (Raschke et al., 2009).\
+Here, triplicated of native (control) and RNase-treated cell lysates from HeLa cells synchronized in mitosis were loaded onto a 5% to 50% sucrose density gradient. Upon ultracentrifugation, the gradient was divided into 25 fractions and the protein amount of individual proteins per fraction determined by quantitative mass spectrometry. Because RNA-dependent proteins directly or indirectly depend on the presence of RNA, they are expected to show a different migration pattern between control and RNase-treated groups (Caudron-Herger et al., 2019).
+
+In this report, we seek to draw a qualified conclusion about the RNA-dependence status of the 7160 proteins investigated in the provided data set using bioinformatics and statistics. For this purpose, we will define criteria and parameters the given proteins need to fulfill to qualify as RNA-dependent, and will evaluate our given data with respect to above-mentioned aspects using the programming language R. Eventually, we will discuss the significance and possible limitations of our methods and findings.
