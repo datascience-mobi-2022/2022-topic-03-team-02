@@ -191,8 +191,8 @@ for (i in 1:100) {
       }
     }
   }
+  print(paste("protein", as.character(i)))
   print(local_maxima)
-  print(i)
 }
 ```
 
