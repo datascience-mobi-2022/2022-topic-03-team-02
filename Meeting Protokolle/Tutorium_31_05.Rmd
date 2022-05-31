@@ -1,0 +1,36 @@
+---
+title: "Tutorium 31.05."
+author: "Basti"
+date: '2022-05-31'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+##Protokoll vom Tutorium am 31.05:
+
+Korrelation der Proteine zueinander mal graphisch überprüfen
+
+wo cut off? -> 0,5 ist ok
+
+wir wollen lokale maxima miteinbeziehen: was beachten? -> Nachbarkriterium (kleiner), grenze festlegen, am rand aufpassen, lokale maxima müssen ein peak sein also auf umgebung achten, mit 1-3 daneben mal an random beispielen ausprobieren und schauen was am besten passt
+
+report in markdown via latex modifizieren? -> Ja -> PDF als Output
+Einleitung 2 Seiten ok?, schon viel aber ok wenn wir woanders abspecken, wir sollten aber nicht zu viel schrieben und nicht alle paper sind relevant
+
+10 seiten text oder 10 seiten generell inkl. plots
+referenzen sind separat, 
+->Alles inklusive auf 10 seiten außer referenzen, deckblatt und inhaltsverzeichnis
+
+wenn wir mittelwert der replikate bilden haben wir probleme peaks zu finden:
+durch unsere reproduzierbarkeit haben wir das problem behoben
+-> ok wie wir es machen aber vilt cut off hochsetzen
+
+die 4 proteine mit einer null als eintrag können wir kicken, ausser wir haben am ende genug zeit
+
+Müssen wir packages benutzen?
+ggplot gerne aber kein muss, aber einheitliches design
+
+für alle 3reps einen angeglichenen wert für T-test
