@@ -58,6 +58,27 @@ del_row_sort <- sort(unique(del_row))
 del_row_sort
 ```
 
+Then we want to check whether the rows contain only zeros in all replicates, or just in one or two replicates, which could allow us to use mean values as a replacement.
+
+```{r}
+#Keep the rows in which only one replicate has no values, but the other replicates have normal values
+#del_row_sort gives the numbers of the rows which include only zeros in at least one replicate
+#del_row_refined = sort(unique(del_row)[table(del_row)<=2])
+
+#for (i in del_row__refined) {
+  #iterate through all rows in which there are only zeros in at least one replicate
+  
+#  for(j in c("Ctrl_Rep1", "Ctrl_Rep2", "Ctrl_Rep3", "RNase_Rep1", "RNase_Rep2", "RNase_Rep3")){
+    #iterate through all replicates
+    
+#       if (sum(MS_Table[i, grep(j, colnames(MS_Table))]) <= 0) {
+#        row_means_possible<- append(row_means_possible, i)
+#        }
+#    }
+#  }
+```
+
+
 Therefore, we remove rows 691, 3045, 3575, 4057, 5568, 6732 and 7112.
 ```{r}
 # remove the rows saved in del_row_sort
