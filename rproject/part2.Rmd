@@ -1,12 +1,14 @@
 ---
 title: "Analysis Part 2"
 author: "Michèle, Lennart, Michel, Sebastian"
-date: "5/27/2022"
+date: "`r Sys.Date()`"
 output: html_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(cache = TRUE)
+library("tidyverse")
 ```
 
 ## load data
@@ -23,6 +25,9 @@ View(df_normalized_combined)
 ```{r}
 dim(df_normalized_combined)
 ```
+
+## global maxima
+
 ```{r}
 d <- dim(df_normalized_combined)
 rows <- d[1] 
@@ -30,6 +35,7 @@ columns <- d[2]
 fractions_ctrl <- 25
 fractions_RNase <- 25
 ```
+
 ```{r}
 #Dataframe erstellen 
 data_frame_maxima_ctrl <- data.frame()
@@ -81,5 +87,122 @@ View(data_frame_maxima_ctrl)
 
 dim(data_frame_maxima_ctrl)
 ```
+
+## local maxima
+
+```{r}
+df_local_maxima_ctrl <- data.frame()
+
+for (i in 1:15) {
+  # first loop iterating through the proteins
+  over_4 <- c()
+  # store indices of values over 4 for every protein in here (only temporary)
+  
+  for (j in 1:25) {
+    # second loop iterating through all Ctrl fractions
+    if (df_normalized_combined[i, j] > 4) {
+      over_4 <- append(over_4, j)
+    }
+  }
+  print(over_4)
+  local_maxima <- c()
+  # store indices of values over 4 and with no higher neighbours (only temporary)
+  
+  for (v in over_4) {
+    # iterate through all values that are > 4
+    print(df_normalized_combined[i, v])
+    
+    if (df_normalized_combined[i, v] > df_normalized_combined[i, v - 1] &
+        df_normalized_combined[i, v] > df_normalized_combined[i, v - 2] &
+        df_normalized_combined[i, v] > df_normalized_combined[i, v + 1] &
+        df_normalized_combined[i, v] > df_normalized_combined[i, v + 2] &
+        df_normalized_combined[i, v] != max(df_normalized_combined[i, 1:25])) {
+      local_maxima <- append(local_maxima, v)
+    }
+  }
+  print(local_maxima)
+}
+```
+
+```{r}
+plot(1:25, df_normalized_combined[14, 1:25], type = "b")
+```
+
+
+
+```{r}
+df_local_maxima_ctrl <- data.frame()
+# create data frame which will consist of local maxima and there position for Ctrl condition
+
+for (i in 1:100) {
+  # first loop iterating through the proteins
+  over_4 <- c()
+  # store indices of values over 4 for every protein in here (only temporary)
+  
+  for (j in 1:25) {
+    # second loop iterating through all Ctrl fractions
+    if (df_normalized_combined[i, j] > 4) {
+      # only values > 4 are saved
+      over_4 <- append(over_4, j)
+    }
+  }
+  #print(over_4)
+  local_maxima <- c()
+  # store indices of values over 4 and with no higher neighbours (only temporary)
+  
+  for (v in over_4) {
+    # iterate through all values that are > 4
+    #print(df_normalized_combined[i, v])
+    
+    # values on boarders have to be treated differently
+    if (v == 1) {
+      if (df_normalized_combined[i, v] > df_normalized_combined[i, v + 1] &
+          df_normalized_combined[i, v] > df_normalized_combined[i, v + 2] &
+          df_normalized_combined[i, v] != max(df_normalized_combined[i, 1:25])) {
+        local_maxima <- append(local_maxima, v)
+      }
+    } else if (v == 2) {
+      if (df_normalized_combined[i, v] > df_normalized_combined[i, v - 1] &
+          df_normalized_combined[i, v] > df_normalized_combined[i, v + 1] &
+          df_normalized_combined[i, v] > df_normalized_combined[i, v + 2] &
+          df_normalized_combined[i, v] != max(df_normalized_combined[i, 1:25])) {
+        local_maxima <- append(local_maxima, v)
+      }
+    } else if (v == 24) {
+      if (df_normalized_combined[i, v] > df_normalized_combined[i, v - 1] &
+          df_normalized_combined[i, v] > df_normalized_combined[i, v - 2] &
+          df_normalized_combined[i, v] > df_normalized_combined[i, v + 1] &
+          df_normalized_combined[i, v] != max(df_normalized_combined[i, 1:25])) {
+        local_maxima <- append(local_maxima, v)
+      }
+    } else if (v == 25) {
+      if (df_normalized_combined[i, v] > df_normalized_combined[i, v - 1] &
+          df_normalized_combined[i, v] > df_normalized_combined[i, v - 2] &
+          df_normalized_combined[i, v] != max(df_normalized_combined[i, 1:25])) {
+        local_maxima <- append(local_maxima, v)
+      }
+    } else {
+      if (df_normalized_combined[i, v] > df_normalized_combined[i, v - 1] &
+          df_normalized_combined[i, v] > df_normalized_combined[i, v - 2] &
+          df_normalized_combined[i, v] > df_normalized_combined[i, v + 1] &
+          df_normalized_combined[i, v] > df_normalized_combined[i, v + 2] &
+          df_normalized_combined[i, v] != max(df_normalized_combined[i, 1:25])) {
+        local_maxima <- append(local_maxima, v)
+      }
+    }
+  }
+  print(paste("protein", as.character(i)))
+  print(local_maxima)
+}
+```
+
+
+
+
+
+
+
+
+
 
 
