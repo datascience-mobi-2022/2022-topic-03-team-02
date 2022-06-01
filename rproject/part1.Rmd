@@ -249,7 +249,7 @@ for (i in 1:ncol(tdf_normalized)) {
 
 Now, we can check how many and which values are below a threshold t.
 ```{r}
-t <- 0.5  # threshold value 
+t <- 0.6  # threshold value 
 
 cor_mat <- cbind(c1c2, c1c3, c2c3, r1r2, r1r3, r2r3)
 sum(cor_mat < t)
