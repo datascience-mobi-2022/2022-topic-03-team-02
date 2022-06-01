@@ -1,0 +1,29 @@
+---
+title: "Meeting 1.06."
+author: "Basti"
+date: '2022-06-01'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+##Part 01
+Reproduzierbarkeit:
+Threshhold überprüfen: für steigenden Threshhold berechnet wie viele Proteine rausfliegen würden, nach Kink in Graphen suchen um besten Wert zu finden -> Michèl/e
+4 Proteine mit vielen nullen aber nicht nur nullen mittelwerte berechnen-> Basti
+
+##Part 02
+Verbessern/Anpassen des Codes für Part 02 -> Michèl/e
+
+##Planung Part 03
+Eliminieren der Proteine die keinen Shift haben.
+Wie machen wir den T-test auf die drei Fraktionen?
+Wie können wir verfälschungen der mittelwerte für den T-test vermeiden/kontrollieren?
+Wie können wir die FPR reduzieren?
+
+##Report planung
+Methoden erstmal ohne Code chunks, konzeptionell erklären welche normalisierungsschritte etc. weshalb durchgeführt werden
+Methoden können geschrieben werden für part 1 ->lenny plus basti vilt
+Ergebnisse und Discussion für Part 1 schonmal anfangen ->lennny und basti                                                                                                                       
