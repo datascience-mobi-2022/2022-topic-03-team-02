@@ -38,9 +38,17 @@ Every column's data type is numeric (double)!
 
 We want to remove every row that has only zeros or negative numbers in at least one of the 3 replicates for each condition (RNase or Ctrl). Those rows will not help us to identify shifts and therefore to identify RNA-depending proteins.
 ```{r}
+# find all proteins that contain only zeros in at least one replicate
+
 del_row <- c()
+# save those proteins (row number) in del_row
+
 for (i in c("Ctrl_Rep1", "Ctrl_Rep2", "Ctrl_Rep3", "RNase_Rep1", "RNase_Rep2", "RNase_Rep3")) {
+  # iterate through all replicates
+  
   for (j in 1:nrow(MS_Table)) {
+    # iterate through all values
+    
     if (sum(MS_Table[j, grep(i, colnames(MS_Table))]) <= 0) {
       del_row <- append(del_row, j)
     }
@@ -50,8 +58,30 @@ del_row_sort <- sort(unique(del_row))
 del_row_sort
 ```
 
+Then we want to check whether the rows contain only zeros in all replicates, or just in one or two replicates, which could allow us to use mean values as a replacement.
+
+```{r}
+#Keep the rows in which only one replicate has no values, but the other replicates have normal values
+#del_row_sort gives the numbers of the rows which include only zeros in at least one replicate
+#del_row_refined = sort(unique(del_row)[table(del_row)<=2])
+
+#for (i in del_row__refined) {
+  #iterate through all rows in which there are only zeros in at least one replicate
+  
+#  for(j in c("Ctrl_Rep1", "Ctrl_Rep2", "Ctrl_Rep3", "RNase_Rep1", "RNase_Rep2", "RNase_Rep3")){
+    #iterate through all replicates
+    
+#       if (sum(MS_Table[i, grep(j, colnames(MS_Table))]) <= 0) {
+#        row_means_possible<- append(row_means_possible, i)
+#        }
+#    }
+#  }
+```
+
+
 Therefore, we remove rows 691, 3045, 3575, 4057, 5568, 6732 and 7112.
 ```{r}
+# remove the rows saved in del_row_sort
 MS_Table <- MS_Table[-del_row_sort,]
 ```
 
@@ -64,13 +94,13 @@ Dimension of our data frame:
 dim(MS_Table)
 ```
 
-Some rownames:
+Some row names:
 ```{r}
 head(rownames(MS_Table))
 ```
 
 
-Some columnnames:
+Some column names:
 ```{r}
 head(colnames(MS_Table))
 ```
@@ -145,6 +175,7 @@ for (i in 1:nrow(RNase_Rep3)) {
 
 Now, we can verify if the sum of every row really equals 100. If everything went correctly, we should get 6 times TRUE!
 ```{r}
+# test if the sum of each row divided by 100 is the number of rows will tell us whether the sum is 100
 sum(Ctrl_Rep1) / 100 == nrow(Ctrl_Rep1)
 sum(RNase_Rep1) / 100 == nrow(RNase_Rep1)
 sum(Ctrl_Rep2) / 100 == nrow(Ctrl_Rep2)
@@ -179,88 +210,105 @@ We want to evaluate the reproducibility of our data by computing the correlation
 ```{r}
 tdf_normalized <- as.data.frame(t(df_normalized))
 
+# correlation between ctrl1 and ctrl2 for every protein
 c1c2 <- c()
 for (i in 1:ncol(tdf_normalized)) {
   c1c2 <- append(c1c2, (cor(tdf_normalized[1:25, i], tdf_normalized[26:50, i])))
 }
 
+# correlation between ctrl1 and ctrl3 for every protein
 c1c3 <- c()
 for (i in 1:ncol(tdf_normalized)) {
   c1c3 <- append(c1c3, (cor(tdf_normalized[1:25, i], tdf_normalized[51:75, i])))
 }
-  
+ 
+# correlation between ctrl2 and ctrl3 for every protein 
 c2c3 <- c()
 for (i in 1:ncol(tdf_normalized)) {
   c2c3 <- append(c2c3, (cor(tdf_normalized[26:50, i], tdf_normalized[51:75, i])))
 }
-  
+
+# correlation between rnase1 and rnase2 for every protein
 r1r2 <- c()
 for (i in 1:ncol(tdf_normalized)) {
   r1r2 <- append(r1r2, (cor(tdf_normalized[76:100, i], tdf_normalized[101:125, i])))
 }
-  
+
+# correlation between rnase1 an rnase3 for every protein
 r1r3 <- c()
 for (i in 1:ncol(tdf_normalized)) {
   r1r3 <- append(r1r3, (cor(tdf_normalized[76:100, i], tdf_normalized[126:150, i])))
 }
   
+# correlation between rnase2 and rnase3 for every protein
 r2r3 <- c()
 for (i in 1:ncol(tdf_normalized)) {
   r2r3 <- append(r2r3, (cor(tdf_normalized[101:125, i], tdf_normalized[126:150, i])))
 }
 ```
 
-Now, we can check how many and which values are below a threshold of r = 0.5.
+Now, we can check how many and which values are below a threshold t.
 ```{r}
+t <- 0.5  # threshold value 
+
 cor_mat <- cbind(c1c2, c1c3, c2c3, r1r2, r1r3, r2r3)
-sum(cor_mat < 0.5)
-sum(c1c2 < 0.5)
-sum(c1c3 < 0.5)
-sum(c2c3 < 0.5)
-sum(r1r2 < 0.5)
-sum(r1r3 < 0.5)
-sum(r2r3 < 0.5)
+sum(cor_mat < t)
+sum(c1c2 < t)
+sum(c1c3 < t)
+sum(c2c3 < t)
+sum(r1r2 < t)
+sum(r1r3 < t)
+sum(r2r3 < t)
 ```
 
 ```{r}
 tc <- c()
+# tc will contain the proteinnames of all correlation values < t
 
 for (i in 1:ncol(tdf_normalized)) {
-  if (c1c2[i] < 0.5) {
+  if (c1c2[i] < t) {
     tc <- append(tc, colnames(tdf_normalized)[i])
   } 
 }
 for (i in 1:ncol(tdf_normalized)) {
-  if (c1c3[i] < 0.5) {
+  if (c1c3[i] < t) {
     tc <- append(tc, colnames(tdf_normalized)[i])
   } 
 }
 for (i in 1:ncol(tdf_normalized)) {
-  if (c2c3[i] < 0.5) {
+  if (c2c3[i] < t) {
     tc <- append(tc, colnames(tdf_normalized)[i])
   } 
 }
 for (i in 1:ncol(tdf_normalized)) {
-  if (r1r2[i] < 0.5) {
+  if (r1r2[i] < t) {
     tc <- append(tc, colnames(tdf_normalized)[i])
   } 
 }
 for (i in 1:ncol(tdf_normalized)) {
-  if (r1r3[i] < 0.5) {
+  if (r1r3[i] < t) {
     tc <- append(tc, colnames(tdf_normalized)[i])
   } 
 }
 for (i in 1:ncol(tdf_normalized)) {
-  if (r2r3[i] < 0.5) {
+  if (r2r3[i] < t) {
     tc <- append(tc, colnames(tdf_normalized)[i])
   } 
 }
 ```
 
 ```{r}
+# length of unique elements of tc will give us the number of proteins which will be deleted under t
 length(unique(tc))
 ```
 Seems like 36 proteins have replicates that do not correlate well with each other.
+
+We can also have a look at the correlation values we just computed by visualizing them with a plot. For example, we can have a look at the distribution:
+
+```{r}
+cor_vec <- c(c1c2, c1c3, c2c3, r1r2, r1r3, r2r3)
+hist(cor_vec)
+```
 
 To visualize the analysis we just performed, we can plot two replicates which are not strongly correlated and two replicates which are strongly correlated.
 ```{r}
