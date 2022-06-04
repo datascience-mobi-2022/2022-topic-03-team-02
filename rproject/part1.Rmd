@@ -364,8 +364,9 @@ remove_proteins <- c()
 for (i in 1:length(utc)) {
   remove_proteins <- append(remove_proteins, which(rownames(df_normalized) == utc[i]))
 }
-
-df_normalized <- df_normalized[-remove_proteins,]
+if (length(remove_proteins) != 0) {
+  df_normalized <- df_normalized[-remove_proteins,]
+}
 dim(df_normalized)
 ```
 
