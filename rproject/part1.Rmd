@@ -99,7 +99,6 @@ Some row names:
 head(rownames(MS_Table))
 ```
 
-
 Some column names:
 ```{r}
 head(colnames(MS_Table))
@@ -190,6 +189,7 @@ Seems like everything went fine! Now, we can combine the replicate's data frames
 df_normalized <- as.data.frame(cbind(Ctrl_Rep1, Ctrl_Rep2, Ctrl_Rep3, RNase_Rep1, RNase_Rep2, RNase_Rep3))
 dim(df_normalized) == dim(MS_Table)
 sum(df_normalized[1,]) / 6 == 100
+df_normalized_copy <- df_normalized
 ```
 
 ## evaluating reproducibility of our data
@@ -369,7 +369,7 @@ df_normalized <- df_normalized[-remove_proteins,]
 dim(df_normalized)
 ```
 
-We can save this data frame as a new file **RDeeP_HeLa_Mitosis_normalized.rds**:
+Now, we have removed 64 proteins due to an expected low reproducibility. We can save this data frame as a new file **RDeeP_HeLa_Mitosis_normalized.rds**:
 
 ```{r}
 saveRDS(df_normalized, file = "DeeP_HeLa_Mitosis_normalized.rds")
@@ -377,7 +377,7 @@ saveRDS(df_normalized, file = "DeeP_HeLa_Mitosis_normalized.rds")
 
 ```{r}
 df_normalized <- readRDS("DeeP_HeLa_Mitosis_normalized.rds")
-sum(df_normalized[1,]) / 6 == 100
+sum(df_normalized) / 600 == nrow(df_normalized)
 ```
 
 ## combining replicates using mean value
@@ -439,7 +439,7 @@ Now both, the Ctrl and the RNase data frames, consist of the mean values of the 
 
 ```{r}
 df_normalized_combined <- cbind(df_Ctrl_c, df_RNase_c)
-rownames(df_normalized_combined) <- rownames(MS_Table)
+rownames(df_normalized_combined) <- rownames(df_normalized)
 
 cnc <- sapply(1:25, function(x) {paste("Fraction", x, "_Ctrl", sep = "")})
 cnr <- sapply(1:25, function(x) {paste("Fraction", x, "_RNase", sep = "")})
