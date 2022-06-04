@@ -192,17 +192,6 @@ dim(df_normalized) == dim(MS_Table)
 sum(df_normalized[1,]) / 6 == 100
 ```
 
-We can save this data frame as a new file **RDeeP_HeLa_Mitosis_normalized.rds**:
-
-```{r}
-saveRDS(df_normalized, file = "DeeP_HeLa_Mitosis_normalized.rds")
-```
-
-```{r}
-df_normalized <- readRDS("DeeP_HeLa_Mitosis_normalized.rds")
-sum(df_normalized[1,]) / 6 == 100
-```
-
 ## evaluating reproducibility of our data
 
 We want to evaluate the reproducibility of our data by computing the correlation between the replicates of the two conditions for every protein. By doing it that way, we can not only evaluate similarities between the replicates of one condition, we can also sort out single proteins which data do not seem to be reproducible. (First, we create a vector for every protein containing all its values of one replicate, for every replicate and condition.) 
@@ -247,23 +236,95 @@ for (i in 1:ncol(tdf_normalized)) {
 }
 ```
 
-Now, we can check how many and which values are below a threshold t.
-```{r}
-t <- 0.6  # threshold value 
+In order to test which threshold fits the best we try different ones, and plot how many proteins would be removed. We are testing threshold values from 0 to 0.8. Everything above would mean throwing away too many proteins, with high correlation. 
 
-cor_mat <- cbind(c1c2, c1c3, c2c3, r1r2, r1r3, r2r3)
-sum(cor_mat < t)
-sum(c1c2 < t)
-sum(c1c3 < t)
-sum(c2c3 < t)
-sum(r1r2 < t)
-sum(r1r3 < t)
-sum(r2r3 < t)
+```{r}
+tres_values <- c()
+
+for (t in seq(0, 0.8, by = 0.05)) {
+  tc <- c()
+  
+  for (i in 1:ncol(tdf_normalized)) {
+    if (c1c2[i] < t) {
+      tc <- append(tc, colnames(tdf_normalized)[i])
+    }
+  }
+  for (i in 1:ncol(tdf_normalized)) {
+    if (c1c3[i] < t) {
+      tc <- append(tc, colnames(tdf_normalized)[i])
+    }
+  }
+  for (i in 1:ncol(tdf_normalized)) {
+    if (c2c3[i] < t) {
+      tc <- append(tc, colnames(tdf_normalized)[i])
+    }
+  }
+  for (i in 1:ncol(tdf_normalized)) {
+    if (r1r2[i] < t) {
+      tc <- append(tc, colnames(tdf_normalized)[i])
+    }
+  }
+  for (i in 1:ncol(tdf_normalized)) {
+    if (r1r3[i] < t) {
+      tc <- append(tc, colnames(tdf_normalized)[i])
+    }
+  }
+  for (i in 1:ncol(tdf_normalized)) {
+    if (r2r3[i] < t) {
+      tc <- append(tc, colnames(tdf_normalized)[i])
+    }
+  }
+  tres_values <- append(tres_values, length(unique(tc)))
+}
 ```
 
+To evaluate a fitting threshold value we are going to plot the number of proteins which would be removed against the respective threshold value. 
+
 ```{r}
+plot(seq(0, 0.8, 0.05), tres_values, type = "b", xlab = "threshold value", ylab = "number of removed proteins", main = "")
+```
+Value 0.6 seems to be a good fit. We can also have a look at the correlation values we just computed by visualizing them with a plot. For example, we can have a look at the distribution:
+
+```{r}
+cor_vec <- c(c1c2, c1c3, c2c3, r1r2, r1r3, r2r3)
+hist(cor_vec)
+```
+Here it also looks like 0.6 is a good threshold value. 
+
+To visualize the analysis we just performed, we can plot two replicates which are not strongly correlated and two replicates which are strongly correlated.
+```{r}
+par(mfrow = c(1, 2))
+
+# no strong correlation
+colnames(tdf_normalized)[which(r1r3 == min(r1r3))]
+df_plot1 <-
+  data.frame(x = tdf_normalized$K2C1_HUMAN[76:100], y = tdf_normalized$K2C1_HUMAN[126:150])
+plot1 <- ggplot(df_plot1, aes(x, y)) +
+  geom_point() +
+  geom_smooth() +
+  labs(x = "K2C1_HUMAN RNase Rep1", y = "K2C1_HUMAN RNase Rep3")
+
+# strong correlation
+set.seed(124)
+x <- which(c1c2 < 0.97)
+colnames(tdf_normalized)[sample(which(c1c2[x] > 0.90), 1)]
+
+df_plot2 <-
+  data.frame(x = tdf_normalized$ECE1_HUMAN[1:25] , y = tdf_normalized$ECE1_HUMAN[26:50])
+plot2 <- ggplot(df_plot2, aes(x, y)) +
+  geom_point() +
+  geom_smooth() +
+  labs(x = "ECE1_HUMAN Ctrl Rep1", y = "ECE1_HUMAN Ctrl Rep2")
+
+# plot
+cowplot::plot_grid(plot1, plot2, labels = "AUTO")
+```
+
+Now, we must remove the proteins with correlation values below 0.6.
+
+```{r}
+t = 0.6
 tc <- c()
-# tc will contain the proteinnames of all correlation values < t
 
 for (i in 1:ncol(tdf_normalized)) {
   if (c1c2[i] < t) {
@@ -295,48 +356,28 @@ for (i in 1:ncol(tdf_normalized)) {
     tc <- append(tc, colnames(tdf_normalized)[i])
   } 
 }
-```
 
-```{r}
-# length of unique elements of tc will give us the number of proteins which will be deleted under t
 length(unique(tc))
-```
-Seems like 36 proteins have replicates that do not correlate well with each other.
+utc <- unique(tc)
+remove_proteins <- c()
 
-We can also have a look at the correlation values we just computed by visualizing them with a plot. For example, we can have a look at the distribution:
+for (i in 1:length(utc)) {
+  remove_proteins <- append(remove_proteins, which(rownames(df_normalized) == utc[i]))
+}
+
+df_normalized <- df_normalized[-remove_proteins,]
+dim(df_normalized)
+```
+
+We can save this data frame as a new file **RDeeP_HeLa_Mitosis_normalized.rds**:
 
 ```{r}
-cor_vec <- c(c1c2, c1c3, c2c3, r1r2, r1r3, r2r3)
-hist(cor_vec)
+saveRDS(df_normalized, file = "DeeP_HeLa_Mitosis_normalized.rds")
 ```
 
-To visualize the analysis we just performed, we can plot two replicates which are not strongly correlated and two replicates which are strongly correlated.
 ```{r}
-par(mfrow = c(1, 2))
-
-# no strong correlation
-colnames(tdf_normalized)[which(r1r3 == min(r1r3))]
-df_plot1 <-
-  data.frame(x = tdf_normalized$K2C1_HUMAN[76:100], y = tdf_normalized$K2C1_HUMAN[126:150])
-plot1 <- ggplot(df_plot1, aes(x, y)) +
-  geom_point() +
-  geom_smooth() +
-  labs(x = "K2C1_HUMAN RNase Rep1", y = "K2C1_HUMAN RNase Rep3")
-
-# strong correlation
-set.seed(124)
-x <- which(c1c2 < 0.97)
-colnames(tdf_normalized)[sample(which(c1c2[x] > 0.90), 1)]
-
-df_plot2 <-
-  data.frame(x = tdf_normalized$ECE1_HUMAN[1:25] , y = tdf_normalized$ECE1_HUMAN[26:50])
-plot2 <- ggplot(df_plot2, aes(x, y)) +
-  geom_point() +
-  geom_smooth() +
-  labs(x = "ECE1_HUMAN Ctrl Rep1", y = "ECE1_HUMAN Ctrl Rep2")
-
-# plot
-cowplot::plot_grid(plot1, plot2, labels = "AUTO")
+df_normalized <- readRDS("DeeP_HeLa_Mitosis_normalized.rds")
+sum(df_normalized[1,]) / 6 == 100
 ```
 
 ## combining replicates using mean value
