@@ -18,10 +18,6 @@ df_normalized_combined <- readRDS("DeeP_HeLa_Mitosis_normalized_combined.rds")
 ```
 
 ```{r}
-View(df_normalized_combined)
-```
-
-```{r}
 dim(df_normalized_combined)
 ```
 
@@ -36,55 +32,52 @@ fractions_RNase <- 25
 ```
 
 ```{r}
-#Dataframe erstellen 
-data_frame_maxima_ctrl <- data.frame()
-#spaltenname <- c("protein_names", "fraction_ctrl_max", "fraction_ctrl_max_column", "fraction_rna_max", "fraction_ctrl_max_colum")
-#colnames(data_frame_maxima_ctrl) <- spaltenname
-
-
-
+df_global_maxima <- data.frame()
 proteins <- rownames(df_normalized_combined)
 fractionsnames <- colnames(df_normalized_combined)
-for (z in 1:rows){
- # print(proteins[z])
-  proteinname <- proteins[z] #proteinname zwischenspeichern 
-    #Maximum der Ctrl suchen 
-    #maximafc <- max(df_normalized_combined[z,1:25])
-    #print(maximafc)
-    #maximarna <- max (df_normalized_combined[z,26:50])
-    #print(maximarna)
+
+for (z in 1:rows) {
+  proteinname <- proteins[z]
   
-  
-  maxfc <- df_normalized_combined[z,1]
+  maxfc <- df_normalized_combined[z, 1]
   maxfcc <- 1
+  
   for (fc in 2:25) {
-    if (maxfc < df_normalized_combined[z,fc]){
-      maxfc <- df_normalized_combined[z,fc]
+    
+    if (maxfc < df_normalized_combined[z, fc]) {
+      maxfc <- df_normalized_combined[z, fc]
       maxfcc <- fc
     }
   }
- # print(maxfc)
- # print(fractionsnames[maxfcc])
   
-  
-  maxrna <- df_normalized_combined[z,26]
+  maxrna <- df_normalized_combined[z, 26]
   maxfcr <- 26
+  
   for (fc in 27:50) {
-    if (maxrna < df_normalized_combined[z,fc]){
-      maxrna <- df_normalized_combined[z,fc]
+    
+    if (maxrna < df_normalized_combined[z, fc]) {
+      maxrna <- df_normalized_combined[z, fc]
       maxfcr <- fc
     }
   }
- # print(maxfc)
- # print(fractionsnames[maxfcr])
-     #"protein_names", "fraction_ctrl_max", "fraction_ctrl_max_column", "fraction_rna_max", 
-     #"fraction_ctrl_max_colum"
-data_frame_maxima_ctrl <- rbind(data_frame_maxima_ctrl, data.frame(protein_name = proteinname, fraction_ctrl_max = maxfc, fraction_ctrl_max_column = fractionsnames[maxfcc], fraction_rna_max = maxrna, fraction_rna_max_column = fractionsnames[maxfcr]))
+  
+  df_global_maxima <-
+    rbind(
+      df_global_maxima,
+      data.frame(
+        #global_maximum_ctrl_fraction1 = fractionsnames[maxfcc],
+        global_maximum_ctrl_fraction = maxfcc,
+        global_maximum_ctrl_value = maxfc,
+        #global_maximum_rnase_fraction1 = fractionsnames[maxfcr],
+        global_maximum_rnase_fraction = maxfcr - 25,
+        global_maximum_rnase_value = maxrna
+      )
+    )
 }
 
-View(data_frame_maxima_ctrl)
-
-dim(data_frame_maxima_ctrl)
+rownames(df_global_maxima) <- rownames(df_normalized_combined)
+View(df_global_maxima)
+dim(df_global_maxima)
 ```
 
 ## local maxima
@@ -102,16 +95,16 @@ plot(1:25, df_normalized_combined[2901, 1:25], type = "b")
 df_local_maxima_ctrl <-
   data.frame(
     row.names = rownames(df_normalized_combined),
-    local_maxima1_fraction = matrix(0, nrow(df_normalized_combined), 1),
-    local_maxima1_value = matrix(0, nrow(df_normalized_combined), 1),
-    local_maxima2_fraction = matrix(0, nrow(df_normalized_combined), 1),
-    local_maxima2_value = matrix(0, nrow(df_normalized_combined), 1),
-    local_maxima3_fraction = matrix(0, nrow(df_normalized_combined), 1),
-    local_maxima3_value = matrix(0, nrow(df_normalized_combined), 1),
-    local_maxima4_fraction = matrix(0, nrow(df_normalized_combined), 1),
-    local_maxima4_value = matrix(0, nrow(df_normalized_combined), 1),
-    local_maxima5_fraction = matrix(0, nrow(df_normalized_combined), 1),
-    local_maxima5_value = matrix(0, nrow(df_normalized_combined), 1)
+    local_maximum1_fraction = matrix(0, nrow(df_normalized_combined), 1),
+    local_maximum1_value = matrix(0, nrow(df_normalized_combined), 1),
+    local_maximum2_fraction = matrix(0, nrow(df_normalized_combined), 1),
+    local_maximum2_value = matrix(0, nrow(df_normalized_combined), 1),
+    local_maximum3_fraction = matrix(0, nrow(df_normalized_combined), 1),
+    local_maximum3_value = matrix(0, nrow(df_normalized_combined), 1),
+    local_maximum4_fraction = matrix(0, nrow(df_normalized_combined), 1),
+    local_maximum4_value = matrix(0, nrow(df_normalized_combined), 1),
+    local_maximum5_fraction = matrix(0, nrow(df_normalized_combined), 1),
+    local_maximum5_value = matrix(0, nrow(df_normalized_combined), 1)
   )
 ```
 
