@@ -21,7 +21,7 @@ knitr::opts_chunk$set(echo = TRUE)
 \
 \
 
-# \Huge Data Analysis Project 2022 \newline \\large Report
+# \Huge Data Analysis Project 2022 \newline Report
 
 ### Institute of Pharmacy and Molecular Biotechnology
 
