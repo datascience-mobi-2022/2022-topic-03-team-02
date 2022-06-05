@@ -451,6 +451,9 @@ colnames(df_normalized_combined)[26:50] <- cnr
 Lastly, we can save that data frame as a file again to avoid running the code above again and again.
 
 ```{r}
+# for report
+saveRDS(tres_values, file = "tres_values.rds")
+
 saveRDS(df_normalized_combined, file = "DeeP_HeLa_Mitosis_normalized_combined.rds")
 ```
 

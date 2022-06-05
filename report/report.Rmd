@@ -21,7 +21,7 @@ knitr::opts_chunk$set(echo = TRUE)
 \
 \
 
-# \Huge Data Analysis Project 2022 \newline \large Report
+# \Huge Data Analysis Project 2022 \newline \\large Report
 
 ### Institute of Pharmacy and Molecular Biotechnology
 
@@ -55,3 +55,34 @@ In density gradient centrifugation, macromolecules such as proteins are forced t
 Here, triplicates of native (control) and RNase-treated cell lysates from HeLa cells synchronized in mitosis were loaded onto a 5% to 50% sucrose density gradient. Upon ultracentrifugation, the gradient was divided into 25 fractions and the protein amount of individual proteins per fraction determined by quantitative mass spectrometry. Because RNA-dependent proteins directly or indirectly depend on the presence of RNA, they are expected to show a different migration pattern between control and RNase-treated groups (Caudron-Herger et al., 2019).
 
 In this report, we seek to draw a qualified conclusion about the RNA-dependence status of the 7160 proteins investigated in the provided data set using bioinformatics and statistics. For this purpose, we will define criteria and parameters the given proteins need to fulfill to qualify as RNA-dependent, and will evaluate our given data with respect to aforementioned aspects using the programming language R. Eventually, we will discuss the significance and possible limitations of our methods and findings.
+
+\newpage
+
+# **Methods**
+
+***Preliminary Steps***
+
+Before interpreting our data with respect to RNA dependent proteins, we performed a set of preliminary steps to ensure the validity and conclusiveness of our approach.
+
+For the purpose of cleaning our data, we first tested whether every column's data type was numeric, which was the case for all 150 columns. Subsequently, we removed all proteins that contained negative protein amounts or only zeros in at least one of the three replicates for each condition (control and RNase). Although replacement strategies do exist, we decided against keeping these proteins in our data set because these anomalies were not compatible with our further analysis steps and indicated an error in measurement.
+
+Since all proteins investigated in our data set naturally show a heterogeneous expression level in living cells, we performed a fraction-wise normalization step to ensure comparability between different proteins. For this purpose, we set the protein amount to be 100 for each replicate in each condition. After this step, the sum of the protein amount across all 25 fractions was equal to 100 for each replicate. In other words, normalizing our data changed the absolute protein levels for each fraction while the protein amount in each fraction relative to the total protein amount across all fractions stayed the same.
+
+Next, we wanted to evaluate the reproducibility of our data. For this purpose, we computed the correlation (Pearson) between replicates within each condition in all possible combinations (for example, correlation between control replicate 1 and 2, 1 and 3 and 2 and 3). This allowed us to sort out single proteins whose data did not seem to be reproducible. We defined a threshold correlation value below which the data for given proteins was regarded as non-reproducible. For this purpose, we looked at the number of proteins we would have to discard for each threshold level between 0 and 0.8 in 0.05 steps:
+
+```{r echo=FALSE, cache=TRUE}
+
+plot(seq(0, 0.8, 0.05), readRDS("tres_values.rds"), type = "b", xlab = "threshold value", ylab = "number of removed proteins", main = "")
+
+abline(v = 0.6, col = "red", lwd = 1, lty = 2)
+```
+
+Considering this, we identified a threshold level of 0.6 as a good compromise between choosing a preferably high threshold level on the one hand and avoiding to remove too many proteins from our data set on the other. This led to the removal of another 64 proteins from our data set.
+
+Last, for each protein and condition, all three replicates were combined into a single vector of protein amount values using the mean value between fractions. Although more robust against outliers, we decided against using the median for the purpose of combining replicates since many proteins contained fractions with a protein level of zero, which would have biased our further analysis.
+
+# **Discussion**
+
+-   T-Test mit nur 2 Replikaten möglich, aber Mehraufwand für 7 Proteine nicht zumutbar, deshalb einfach entfernt + Mittelwert als Replacement
+
+-   \<0.6 in mind. einem Vergleich o allen 3en??
