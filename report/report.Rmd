@@ -3,8 +3,8 @@ output:
   pdf_document: default
   word_document: default
 
-fontsize: 12pt
-geometry: margin = 2.5cm
+fontsize: 11pt
+geometry: margin = 1.5cm
 linestretch: 1.5
 #header-includes:
 #- \usepackage{helvet}
@@ -64,7 +64,7 @@ In this report, we seek to draw a qualified conclusion about the RNA-dependence 
 
 Before interpreting our data with respect to RNA dependent proteins, we performed a set of preliminary steps to ensure the validity and conclusiveness of our approach.
 
-For the purpose of cleaning our data, we first tested whether every column's data type was numeric, which was the case for all 150 columns. Subsequently, we removed all proteins that contained negative protein amounts or only zeros in at least one of the three replicates for each condition (control and RNase). Although replacement strategies do exist, we decided against keeping these proteins in our data set because these anomalies were not compatible with our further analysis steps and indicated an error in measurement.
+For the purpose of cleaning our data, we first tested whether every column's data type was numeric, which was the case for all 150 columns. Subsequently, we removed all proteins that contained negative protein amounts or only zeros in at least one of the three replicates for each condition (control and RNase), which was the case for a total of 7 proteins. Although replacement strategies do exist, we decided against keeping these proteins in our data set because these anomalies were not compatible with our further analysis steps and indicated an error in measurement.
 
 Since all proteins investigated in our data set naturally show a heterogeneous expression level in living cells, we performed a fraction-wise normalization step to ensure comparability between different proteins. For this purpose, we set the protein amount to be 100 for each replicate in each condition. After this step, the sum of the protein amount across all 25 fractions was equal to 100 for each replicate. In other words, normalizing our data changed the absolute protein levels for each fraction while the protein amount in each fraction relative to the total protein amount across all fractions stayed the same.
 
@@ -80,6 +80,14 @@ abline(v = 0.6, col = "red", lwd = 1, lty = 2)
 Considering this, we identified a threshold level of 0.6 as a good compromise between choosing a preferably high threshold level on the one hand and avoiding to remove too many proteins from our data set on the other. This led to the removal of another 64 proteins from our data set.
 
 Last, for each protein and condition, all three replicates were combined into a single vector of protein amount values using the mean value between fractions. Although more robust against outliers, we decided against using the median for the purpose of combining replicates since many proteins contained fractions with a protein level of zero, which would have biased our further analysis.
+
+***Identification of RNA-dependent proteins***
+
+\newpage
+
+# **Results**
+
+\newpage
 
 # **Discussion**
 
