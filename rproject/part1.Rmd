@@ -104,9 +104,50 @@ Some column names:
 head(colnames(MS_Table))
 ```
 
+## normalize replicates
+
+In the first normalization step, we want to have a look at the replicates of every fraction under every condition. Theoretically, the three replicates of each fraction are equal, due to them being the results of the same experiment. However, due to experimental differences, this usually is not the case. Therefore, we normalize the replicates in order to make them comparable. To do so, we normalize every three replicates of a given fraction and condition by computing their sums and then computing the mean value of the two closest sums. The quotients of this mean sum and the three sums of the replicates will give us the normalization factors for the three replicates.
+
+
+```{r}
+for (i in seq(1, 148, by = 3)) {
+# iterate through the fractions (each fraction has 3 replicates)  
+  
+  #print(i)
+  
+  # compute the sums of every replicate
+  sums <- c(sum(MS_Table[, i]), sum(MS_Table[, i + 1]), sum(MS_Table[, i + 2]))
+  
+  # compute the mean value of the two closest sums
+  if (abs(sums[1] - sums[2]) < abs(sums[1] - sums[3]) &
+      abs(sums[1] - sums[2]) < abs(sums[2] - sums[3])) {
+    mean_sum <- mean(c(sums[1], sums[2]))
+  } else if (abs(sums[2] - sums[3]) < abs(sums[1] - sums[2]) &
+             abs(sums[2] - sums[3]) < abs(sums[1] - sums[3])) {
+    mean_sum <- mean(c(sums[2], sums[3]))
+  } else {
+    mean_sum <- mean(c(sums[1], sums[3]))
+  }
+  #print(mean_sum)
+  
+  # compute the normalization factors
+  norm_factor <- mean_sum / sums
+  #print(norm_factor)
+
+  # multiply the normalization factors with their corresponding replicate
+  MS_Table[, i] <- MS_Table[, i] * norm_factor[1]
+  MS_Table[, i + 1] <- MS_Table[, i + 1] * norm_factor[2]
+  MS_Table[, i + 2] <- MS_Table[, i + 2] * norm_factor[3]
+
+}
+```
+
+
+
 ## normalize protein amount per fraction
 
-In the first normalization step, we want to set every protein's amount within one replicate to be 100 per conditions. For example, the protein represented by row 1 has a sum over all 25 fractions of 100 in Ctrl_Rep1. To archive this, we begin with building 6 smaller data frames for every replicate of each condition.
+In the second normalization step, we want to set every protein's amount within one replicate to be 100 per conditions. For example, the protein represented by row 1 has a sum over all 25 fractions of 100 in Ctrl_Rep1. To archive this, we begin with building 6 smaller data frames for every replicate of each condition.
+
 ```{r}
 # create df that contains all rows of control replicate 1
 x <- grep("Ctrl_Rep1", colnames(MS_Table))
