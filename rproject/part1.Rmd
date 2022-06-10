@@ -142,6 +142,24 @@ for (i in seq(1, 148, by = 3)) {
 }
 ```
 
+We can check whether this work fine or not.
+
+```{r}
+counter <- 0
+
+# there is the need to use round because the numbers seem to be slightly different behind the comma
+print(sum(MS_Table[,7]), digits = 17)
+print(sum(MS_Table[,8]), digits = 17)
+
+for (i in seq(1, 148, by = 3)) {
+  if (round(sum(MS_Table[, i])) != round(sum(MS_Table[, i + 1])) &
+      round(sum(MS_Table[, i])) != round(sum(MS_Table[, i + 2]))) {
+    counter <- counter + 1
+    print(i)
+  }
+}
+counter == 0
+```
 
 
 ## normalize protein amount per fraction
