@@ -4,8 +4,10 @@ output:
   word_document: default
 
 fontsize: 11pt
-geometry: margin = 1.5cm
+#geometry: left = 1.5cm, right = 1.5cm, top = 1.5cm, bottom = 2cm
+geometry: margin = 2cm
 linestretch: 1.5
+
 #header-includes:
 #- \usepackage{helvet}
 #- \usepackage[T1]{fontenc}
@@ -16,8 +18,9 @@ linestretch: 1.5
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
-
+\pagenumbering{gobble}
 \
+
 \
 \
 
@@ -27,7 +30,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 \
 Topic 03: Proteome-wide Screen for RNA-dependent Proteins \newline Sub-project 2: HeLa Cells Synchronized in Mitosis \newline\
-Supervisor: Dr. Maïwen Caudron-Herger Tutor: Niklas Engel
+Supervisor: Dr. Maïwen Caudron-Herger \newline Tutor: Niklas Engel
 
 Students: Michel Tarnow, Michèle Bennek, Lennart Müller, Sebastian Rickert \newline Date: 20.07.2022
 
@@ -36,6 +39,7 @@ Students: Michel Tarnow, Michèle Bennek, Lennart Müller, Sebastian Rickert \ne
 # **Table Of Contents**
 
 \newpage
+\pagenumbering{arabic}
 
 # **Introduction**
 
@@ -66,7 +70,9 @@ Before interpreting our data with respect to RNA dependent proteins, we performe
 
 For the purpose of cleaning our data, we first tested whether every column's data type was numeric, which was the case for all 150 columns. Subsequently, we removed all proteins that contained negative protein amounts or only zeros in at least one of the three replicates for each condition (control and RNase), which was the case for a total of 7 proteins. Although replacement strategies do exist, we decided against keeping these proteins in our data set because these anomalies were not compatible with our further analysis steps and indicated an error in measurement.
 
-Since all proteins investigated in our data set naturally show a heterogeneous expression level in living cells, we performed a fraction-wise normalization step to ensure comparability between different proteins. For this purpose, we set the protein amount to be 100 for each replicate in each condition. After this step, the sum of the protein amount across all 25 fractions was equal to 100 for each replicate. In other words, normalizing our data changed the absolute protein levels for each fraction while the protein amount in each fraction relative to the total protein amount across all fractions stayed the same.
+In theory - all other things being equal - replicating the same experiment three times should produce three times the same result. This is equivalent to saying that, for a given fraction, the sum of protein amount values across all included proteins of the data set should be equal for all three replicates. However, this is not the case because in reality, experimental conditions aren't ideal and are subject to various sources of distortion, including naturally occurring statistical fluctuations and limited measurement accuracy. Thus, in order to ensure comparability of our data, it was necessary to perform a column-wise normalization step. For this purpose, we computed the sums of protein amount values for each replicate of a given fraction across all 7152 proteins still included in our data set. Subsequently, we computed the mean of the two closest sums, i. e. the two sums with the smallest absolute difference to each other. Using this mean value, we defined a normalization factor for each replicate of each fraction by dividing the sum of a given replicate by aforementioned mean value. This produced a vector of three normalization factors for each fraction. Last, protein amount values of a given replicate were multiplied with their corresponding normalization factor, resulting in a column-wise normalization in that for a given fraction, the sum of protein amount values across all included proteins of the data set was now equal for all three replicates.
+
+Furthermore, since all proteins investigated in our data set naturally show a heterogeneous expression level in living cells, it was necessary to perform an additional row-wise normalization step to ensure comparability between different proteins. For this purpose, we set the protein amount to be 100 for each replicate in each condition. After this step, the sum of the protein amount across all 25 fractions was equal to 100 for each replicate. In other words, normalizing our data changed the absolute protein levels for each fraction while the protein amount in each fraction relative to the total protein amount across all fractions stayed the same.
 
 Next, we wanted to evaluate the reproducibility of our data. For this purpose, we computed the correlation (Pearson) between replicates within each condition in all possible combinations (for example, correlation between control replicate 1 and 2, 1 and 3 and 2 and 3). This allowed us to sort out single proteins whose data did not seem to be reproducible. We defined a threshold correlation value below which the data for given proteins was regarded as non-reproducible. For this purpose, we looked at the number of proteins we would have to discard for each threshold level between 0 and 0.8 in 0.05 steps:
 
@@ -83,6 +89,13 @@ Last, for each protein and condition, all three replicates were combined into a 
 
 ***Identification of RNA-dependent proteins***
 
+As mentioned earlier, RNA-dependent proteins are expected to show an altered migration pattern in a sucrose density gradient after ultracentrifugation in the presence or absence of RNA. After performing aforementioned preliminary steps, we set to identify possible RNA-dependent proteins by interpreting this altered migration pattern, that is the distribution of normalized protein amount values across all 25 fractions for both conditions, control and RNase. For this it was necessary to define selection criteria proteins have to fulfill in order to qualify as RNA-dependent. Here, proteins are considered RNA-dependent when (i) the position of the global maximum of the protein amount across all 25 fractions shows a shift between control and RNase of 1 fraction or greater, and (ii) there is a significant difference in protein amount between the position of the global maximum in control and the respective fraction in RNase. This meant that first, we had to identify the global maximum for each protein in control and RNase condition, so that subsequently we could test for shift in position of the maximum and significance of difference in protein amount.
+
+For the purpose of determining global maxima, we used aforementioned vectors that combine all three replicates of a given condition using the mean value method. Global maxima for all proteins were then identified by determining the greatest value of protein amount across all 25 fractions for a given protein. This resulted in two values, the averaged position of the global maximum in control and averaged position of the global maximum in RNase, wich were used to calculate the absolute magnitude of the shift.
+
+Significance of difference in protein amount was tested using a Student's t-test. Here, we tested whether the protein amount in each RNase replicate significantly differed from the protein amount at the averaged position of the global maximum in control. Thus, we tested significance of difference in protein amount for each protein in our data set, leading to a total of 7127 t-tests performed on our data set, each test being significant if the computed p-value $p$ was smaller than or equal to the chosen significance level $\alpha$ ($p \le \alpha$). At the same time, the probability of an individual statistical test to be false-positive (type I error, i. e. the mistaken rejection of an actually true null hypothesis) is also equal to the significance level $\alpha$, meaning that for a given $\alpha$ of 0.05, the probability of the individual t-test to produce a false-positive result is equal to 5%. However, performing multiple simultaneous statistical tests on the same data set, each having the probability $\alpha$ to produce a false-positive result, leads to a greater probability of making a type I error with respect to the whole family of performed t-tests than when considering each test individually, a phenomenon referred to as multiple testing problem. Thereby the probability of making one or more false discoveries when performing multiple hypotheses tests is given by the family-wise error rate (FWER; Fahrmeier Statistik): $FWER = 1-(1-\alpha)^k$, with $k$ being the number of independent t-tests to be performed on the given data set and $\alpha$ being the significance level of the individual t-test. Thus, choosing the generally used $\alpha$ of 0.05 would lead to a probability $\alpha^*$ of making one or more false discoveries with respect to all 7127 t-tests performed of $\alpha^* = 1-(1-0.05)^{7127}\approx1$, meaning around 100%. To counteract this, we used the Bonferroni correction, defining our new significance level as $\alpha_{new}=\frac {\alpha_{old}}{k}$. Therefore, t-tests werde regarded as significant if the computed p-value $p$ was smaller than or equal to the the new significance level of $\alpha_{new}=\frac {0.05}{7127}\approx7.02*10^{-6}$, leading to a new $\alpha^*$ of $\alpha^* = 1-(1-\frac{0.05}{7127})^{7127}\approx0.05$.
+
+
 \newpage
 
 # **Results**
@@ -94,3 +107,5 @@ Last, for each protein and condition, all three replicates were combined into a 
 -   T-Test mit nur 2 Replikaten möglich, aber Mehraufwand für 7 Proteine nicht zumutbar, deshalb einfach entfernt + Mittelwert als Replacement
 
 -   \<0.6 in mind. einem Vergleich o allen 3en??
+
+-   Abbildung, um column-wise normalization zu erklären??
