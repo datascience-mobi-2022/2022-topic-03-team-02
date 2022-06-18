@@ -5,7 +5,9 @@
 .DS_store
 RDeeP_HeLa_Mitosis.csv
 DeeP_HeLa_Mitosis_normalized.rds
+RDeeP_HeLa_Mitosis_normalized.rds
 DeeP_HeLa_Mitosis_normalized_combined.rds
+RDeeP_HeLa_Mitosis_normalized_combined.rds
 RDeeP_HeLa_Mitosis_local_maxima.rds
 RDeeP_HeLa_Mitosis_global_maxima.rds
 ~$PP.pptx
