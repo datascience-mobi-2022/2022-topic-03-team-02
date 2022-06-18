@@ -1,0 +1,19 @@
+---
+title: "Analysis Part 3"
+author: "Michèle, Michel, Lennart, Sebastian"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(cache = TRUE)
+library("tidyverse")
+```
+
+## load data
+
+```{r}
+df_normalized <- 
+```
+

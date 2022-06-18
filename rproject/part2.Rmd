@@ -14,7 +14,7 @@ library("tidyverse")
 ## load data
  
 ```{r}
-df_normalized_combined <- readRDS("DeeP_HeLa_Mitosis_normalized_combined.rds")
+df_normalized_combined <- readRDS("RDeeP_HeLa_Mitosis_normalized_combined.rds")
 ```
 
 ```{r}

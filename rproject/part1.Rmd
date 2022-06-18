@@ -142,7 +142,7 @@ for (i in seq(1, 148, by = 3)) {
 }
 ```
 
-We can check whether this work fine or not.
+We can check whether this worked fine or not.
 
 ```{r}
 counter <- 0
@@ -432,11 +432,11 @@ dim(df_normalized)
 Now, we have removed 64 proteins due to an expected low reproducibility. We can save this data frame as a new file **RDeeP_HeLa_Mitosis_normalized.rds**:
 
 ```{r}
-saveRDS(df_normalized, file = "DeeP_HeLa_Mitosis_normalized.rds")
+saveRDS(df_normalized, file = "RDeeP_HeLa_Mitosis_normalized.rds")
 ```
 
 ```{r}
-df_normalized <- readRDS("DeeP_HeLa_Mitosis_normalized.rds")
+df_normalized <- readRDS("RDeeP_HeLa_Mitosis_normalized.rds")
 sum(df_normalized) / 600 == nrow(df_normalized)
 ```
 
@@ -513,7 +513,7 @@ Lastly, we can save that data frame as a file again to avoid running the code ab
 # for report
 saveRDS(tres_values, file = "tres_values.rds")
 
-saveRDS(df_normalized_combined, file = "DeeP_HeLa_Mitosis_normalized_combined.rds")
+saveRDS(df_normalized_combined, file = "RDeeP_HeLa_Mitosis_normalized_combined.rds")
 ```
 
 
