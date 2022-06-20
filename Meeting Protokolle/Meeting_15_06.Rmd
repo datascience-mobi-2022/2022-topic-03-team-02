@@ -1,0 +1,19 @@
+---
+title: "Protokoll 15-06"
+author: "Basti"
+date: '2022-06-15'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+##Planung
+ 1+2 fertig, 3 fertig machen um 4 und 5 zu klären
+ Report für Part 1 und 2 fertig machen
+ 
+ ##Aufgabenverteilung
+ Report schreiben -> Lennart
+ Part 3 und Anfang Part 4 -> Michel + Michèle
+ Clustering überlegen, Left shift, right shift, no shift oder anders? -> Basti
+ Lineare Regressionsmodell, aus Anfangsdaten direkt bestimmen ob RDP oder nicht -> Basti
