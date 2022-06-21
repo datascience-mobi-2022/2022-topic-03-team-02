@@ -72,13 +72,14 @@ Anyway, that does not really help us choosing the right value for n.
 
 n = 1
 ```{r}
+n = 1
 shift_proteins <- c()
 
 for (i in 1:nrow(df_global_maxima)) {
   
-  if (shift_global[i] < -1) {
+  if (shift_global[i] < -n) {
     shift_proteins <- append(shift_proteins, rownames(df_global_maxima)[i])
-  } else if (shift_global[i] > 1) {
+  } else if (shift_global[i] > n) {
     shift_proteins <- append(shift_proteins, rownames(df_global_maxima)[i])
   }
   
