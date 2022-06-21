@@ -73,7 +73,6 @@ Anyway, that does not really help us choosing the right value for n.
 n = 1
 ```{r}
 shift_proteins <- c()
-names(shift_global) <- c()
 
 for (i in 1:nrow(df_global_maxima)) {
   
@@ -84,6 +83,8 @@ for (i in 1:nrow(df_global_maxima)) {
   }
   
 }
+
+length(shift_proteins)
 ```
 
 ## significant difference of protein amount at the global maximum
