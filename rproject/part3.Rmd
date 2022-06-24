@@ -136,6 +136,7 @@ length(rdeep2)
 ```
 
 
+Cluster Idee: UMAP Clustern der Proteine und dann V1 und V2 gegeneinander plotten und Proteine färben, z.B. nach no shift, links shift, right shift
 
 
 
