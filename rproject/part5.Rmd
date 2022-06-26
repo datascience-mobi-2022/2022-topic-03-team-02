@@ -1,0 +1,88 @@
+---
+title: "Analysis Part 5"
+author: "Michèle, Michel, Lennart, Sebastian"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(cache = TRUE)
+library("tidyverse")
+```
+
+## Michel's part
+
+load data:
+```{r}
+df_normalized <- readRDS("RDeeP_HeLa_Mitosis_normalized.rds")
+df_normalized_combined <- readRDS("RDeeP_HeLa_Mitosis_normalized_combined.rds")
+```
+
+RDeePs should have a lower correlation between RNase und Ctrl conditions than non-RDeePs:
+```{r}
+tdf <- as.data.frame(t(df_normalized_combined))
+cor(tdf$EED_HUMAN[1:25], tdf$EED_HUMAN[26:50])  # RDeeP
+cor(tdf$`1433B_HUMAN`[1:25], tdf$`1433B_HUMAN`[26:50]) # non-RDeeP
+```
+
+Using this, we can try to make a linear regression model.
+
+```{r}
+# create df that will contain important information for linear modelling
+df_lm <- data.frame(row.names = colnames(tdf))
+
+# add vector containing correlation between rnase and control condition to df
+vec_cor <- apply(tdf, 2, function(x) {
+  cor(x[1:25], x[26:50])
+})
+df_lm$correlation <- vec_cor
+
+# add vector containing whether one protein is rdeep or not to df
+df_lm$RDeeP <- 0
+
+for (i in 1:nrow(df_lm)) {
+  if (sum(rownames(df_lm)[i] == rdeep2) == 1) {
+    df_lm$RDeeP[i] = 1
+  }
+}
+```
+
+```{r}
+linear_model <- lm(RDeeP ~ correlation, data = df_lm)
+summary(linear_model)
+```
+
+```{r}
+# normal distribution of residuals?
+hist(linear_model$residuals, breaks = 20)
+
+qqnorm(linear_model$residuals)
+qqline(linear_model$residuals)
+
+## correlation residuals x-values?
+cor(df_lm$correlation, linear_model$residuals)
+plot(df_lm$correlation, linear_model$residuals, pch = 20)
+```
+
+```{r}
+plot(
+  df_lm$RDeeP,
+  linear_model$fitted.values,
+  pch = 20,
+  col = 'blue',
+  xlab = 'Real values',
+  ylab = 'Predicted values'
+)
+```
+
+
+
+
+
+
+
+
+
+
+

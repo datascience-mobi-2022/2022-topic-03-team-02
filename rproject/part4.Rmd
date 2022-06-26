@@ -14,21 +14,33 @@ library("uwot")
 
 ## Michel's Part
 
+Load the normalized and combined data:
 ```{r}
-df_normalized <- readRDS("RDeeP_HeLa_Mitosis_normalized.rds")
+df_normalized_combined <- readRDS("RDeeP_HeLa_Mitosis_normalized_combined.rds")
 ```
 
+Perform pca and umap or only umap or only pca on data:
 ```{r}
-pca <- prcomp(df_normalized)
+# df_umap1: pca and umap
+pca <- prcomp(df_normalized_combined)
 df_umap1 <- as.data.frame(umap(pca$x))
-df_umap2 <- as.data.frame(umap(df_normalized))
+
+# df_umap2 : only umap
+df_umap2 <- as.data.frame(umap(df_normalized_combined))
+
+# df_pca: only pca
+df_pca <- as.data.frame(prcomp(df_normalized_combined)$x)
 ```
 
+Plot both results to see wether they differ or not:
 ```{r}
 ggplot(df_umap1, aes(x = V1, y = V2)) +
   geom_point()
 
 ggplot(df_umap2, aes(x = V1, y = V2)) +
+  geom_point()
+
+ggplot(df_pca, aes(x = PC1, y = PC2)) +
   geom_point()
 ```
 
@@ -49,8 +61,6 @@ for (i in 1:nrow(df_umap)) {
 }
 ```
 
-
-
 ```{r}
 ggplot(df_umap, aes(x = V1, y = V2, color = shift)) +
   geom_point()
@@ -69,6 +79,30 @@ ggplot(df_umap_shift, aes(x = V1, y = V2, color = shift)) +
 ggplot(df_umap_no_shift, aes(x = V1, y = V2, color = shift)) +
   geom_point()
 ```
+
+```{r}
+n = 1
+df_pca_shift <- cbind(df_pca, matrix(0, nrow(df_normalized_combined), 1))
+colnames(df_pca_shift)[51] <- "shift"
+
+for (i in 1:nrow(df_pca_shift)) {
+  if (shift_global[i] < -n) {
+    df_pca_shift[i, 51] <- "left shift"
+  } else if (shift_global[i] > n) {
+    df_pca_shift[i, 51] <- "right shift"
+  } else {
+    df_pca_shift[i, 51] <- "no shift"
+  }
+  
+}
+```
+
+```{r}
+ggplot(df_pca_shift, aes(x = PC1, y = PC2, color = shift)) +
+  geom_point()
+```
+
+
 ## Michel 2
 
 ```{r}
