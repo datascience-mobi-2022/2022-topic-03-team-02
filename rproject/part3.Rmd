@@ -72,18 +72,20 @@ Anyway, that does not really help us choosing the right value for n.
 
 n = 1
 ```{r}
+n = 1
 shift_proteins <- c()
-names(shift_global) <- c()
 
 for (i in 1:nrow(df_global_maxima)) {
   
-  if (shift_global[i] < -1) {
+  if (shift_global[i] < -n) {
     shift_proteins <- append(shift_proteins, rownames(df_global_maxima)[i])
-  } else if (shift_global[i] > 1) {
+  } else if (shift_global[i] > n) {
     shift_proteins <- append(shift_proteins, rownames(df_global_maxima)[i])
   }
   
 }
+
+length(shift_proteins)
 ```
 
 ## significant difference of protein amount at the global maximum
@@ -94,31 +96,47 @@ The data frame df_global_maxima will give us the fraction we need. The protein a
 
 ```{r}
 sig_dif_proteins <- c()
+pval <- c()
 
 for (i in 1:nrow(df_global_maxima)) {
   
   fraction <- df_global_maxima[i, 1]
   ctrl_vec <- df_normalized[1, c(fraction, fraction + 25, fraction + 50)]
   rnase_vec <- df_normalized[1, c(fraction + 75, fraction + 100, fraction + 125)]
+  
   x <- t.test(ctrl_vec, rnase_vec)
+  pval <- append(pval, x$p.value)
   
   if (x$p.value < 0.05) {
-    sig_dif_proteins <- append(sig_dif_proteins, rownames(df_global_maxima)[i])
+    sig_dif_proteins <-
+      append(sig_dif_proteins, rownames(df_global_maxima)[i])
   }
 }
 
 length(sig_dif_proteins)
+pval_adjust <- p.adjust(pval, method = "fdr")
+```
+
+
+```{r}
+y <- which(pval_adjust < 0.05)
+sig_dif_proteins2 <- rownames(df_global_maxima)[y]
 ```
 
 ## RNA-dependent proteins
 
 ```{r}
+# without fdr correction
 rdeep <- c(intersect(sig_dif_proteins, shift_proteins))
 length(rdeep)
+
+# with fdr correction
+rdeep2 <- c(intersect(sig_dif_proteins2, shift_proteins))
+length(rdeep2)
 ```
 
 
-
+Cluster Idee: UMAP Clustern der Proteine und dann V1 und V2 gegeneinander plotten und Proteine färben, z.B. nach no shift, links shift, right shift
 
 
 
