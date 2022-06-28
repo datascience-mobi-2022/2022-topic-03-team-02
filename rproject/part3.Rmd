@@ -17,6 +17,7 @@ library("tidyverse")
 df_normalized <- readRDS("RDeeP_HeLa_Mitosis_normalized.rds")
 df_normalized_combined <- readRDS("RDeeP_HeLa_Mitosis_normalized_combined.rds")
 df_global_maxima <- readRDS("RDeeP_HeLa_Mitosis_global_maxima.rds")
+df_global_maxima_rep <- readRDS("RDeeP_HeLa_Mitosis_global_maxima_rep.rds")
 ```
 
 ## shift of global maxima > n fractions
@@ -31,6 +32,7 @@ We will start to write a function which gives us the shift in fractions for ever
 # create vector that will contain the shift in fractions for every protein
 shift_global <- c()
 
+# iterate through every protein and calculate how large the shift is
 for (i in 1:nrow(df_global_maxima)) {
   
   x <- df_global_maxima[i, 3] - df_global_maxima[i, 1]
@@ -38,15 +40,16 @@ for (i in 1:nrow(df_global_maxima)) {
   
 }
 
+# now we can see the shift for every protein
 names(shift_global) <- rownames(df_global_maxima)
 ```
 
 By doing it that way, negative numbers indicate left shifts (shift to lower fractions), while positive numbers indicate right shifts (shift to higher fractions).
 
 ```{r}
-sum(shift_global < 0)
-sum(shift_global > 0)
-sum(shift_global == 0)
+sum(shift_global < 0) # left shift
+sum(shift_global > 0) # right shift 
+sum(shift_global == 0) # no shift
 ```
 
 As we can see, only relying on the global maxima, 5008 proteins do not shift, 1409 proteins have a left shift and 710 proteins have a right shift. Now, we need to select how great the left or right shift must be to make a protein a RDeeP-candidate.
@@ -72,73 +75,135 @@ Anyway, that does not really help us choosing the right value for n.
 
 n = 1
 ```{r}
-n = 1
-shift_proteins <- c()
+n = 1 # shift must be greater than n
+shift_proteins <- c() # in here, the proteins which are shifting are saved
+shift_proteins_index <- c()
+counter <- 0
 
 for (i in 1:nrow(df_global_maxima)) {
   
   if (shift_global[i] < -n) {
     shift_proteins <- append(shift_proteins, rownames(df_global_maxima)[i])
+    shift_proteins_index <- append(shift_proteins_index, i)
   } else if (shift_global[i] > n) {
     shift_proteins <- append(shift_proteins, rownames(df_global_maxima)[i])
-  }
-  
+    shift_proteins_index <- append(shift_proteins_index, i)
+  } else if (shift_global[i] < -n | shift_global[i] > n) {
+    counter <- counter + 1
+  } 
 }
 
-length(shift_proteins)
+counter # must be zero
+length(shift_proteins) # shift proteins gives us the names of the proteins which shift more than 1 fraction
+length(shift_proteins_index) # shift proteins index gives us the indices of the shifting proteins
 ```
 
-## significant difference of protein amount at the global maximum
+Tested and verified!
+```{r}
+df_test <- df_global_maxima[-shift_proteins_index, ]
+shift_global_test <- c()
+
+for (i in 1:nrow(df)) {
+  x <- df[i, 3] - df[i, 1]
+  shift_global_test <- append(shift_global_test, x)
+}
+which(shift_global_test > 1)
+which(shift_global_test < -1)
+```
+
+## significant difference of protein amount at the global maximum (combined)
 
 The second criteria a protein must meet concerns the protein amount. Next to having a great enough shift, we want RDeePs to differ significantly in protein amount between RNase and Ctrl condition at the global maxima (we are using the Ctrl maxima). To test this aspect, we are going to use a student's t-test. The fraction which we test will be given by the combined data, so that we only have one global maxima for each protein. The t-test, however, will be performed using the normalized but not combined data to have three sample for every protein and condition.
 The data frame df_global_maxima will give us the fraction we need. The protein amount is saved in df_normalized.
 
-
 ```{r}
-sig_dif_proteins <- c()
 pval <- c()
 
 for (i in 1:nrow(df_global_maxima)) {
   
   fraction <- df_global_maxima[i, 1]
-  ctrl_vec <- df_normalized[1, c(fraction, fraction + 25, fraction + 50)]
-  rnase_vec <- df_normalized[1, c(fraction + 75, fraction + 100, fraction + 125)]
+  ctrl_vec <- df_normalized[i, c(fraction, fraction + 25, fraction + 50)]
+  rnase_vec <- df_normalized[i, c(fraction + 75, fraction + 100, fraction + 125)]
   
-  x <- t.test(ctrl_vec, rnase_vec)
-  pval <- append(pval, x$p.value)
-  
-  if (x$p.value < 0.05) {
-    sig_dif_proteins <-
-      append(sig_dif_proteins, rownames(df_global_maxima)[i])
+  if (abs(sum(ctrl_vec)) > 299.99 & abs(sum(rnase_vec) > 299.99)) {
+    pval <- append(pval, 1)
+  } else {
+    x <- t.test(ctrl_vec, rnase_vec)
+    pval <- append(pval, x$p.value)
   }
 }
 
-length(sig_dif_proteins)
 pval_adjust <- p.adjust(pval, method = "fdr")
+pval_low <- which(pval_adjust < 0.1)
+sig_dif_proteins <- rownames(df_global_maxima)[pval_low]
+sig_dif_proteins_index <- pval_low
+
+length(sig_dif_proteins) # names of proteins with significant t test (combined values)
+length(sig_dif_proteins_index) # index of proteins with significant t test (combined values)
 ```
 
+## significant difference of protein amount at the global maximum (replicates)
 
 ```{r}
-y <- which(pval_adjust < 0.05)
-sig_dif_proteins2 <- rownames(df_global_maxima)[y]
+pval_rep <- c()
+
+for (i in 1:nrow(df_global_maxima_rep)) {
+  
+  ctrl_vec <-
+    c(df_normalized[i, df_global_maxima_rep[i, 1]],
+      df_normalized[i, df_global_maxima_rep[i, 3] + 25],
+      df_normalized[i, df_global_maxima_rep[i, 5] + 50])
+  rnase_vec <-
+    c(df_normalized[i, df_global_maxima_rep[i, 1] + 75],
+      df_normalized[i, df_global_maxima_rep[i, 3] + 100],
+      df_normalized[i, df_global_maxima_rep[i, 5] + 125])
+  
+  if (abs(sum(ctrl_vec)) > 299.99 & abs(sum(rnase_vec) > 299.99)) {
+    pval2 <- append(pval2, 1)
+  } else {
+    x <- t.test(ctrl_vec, rnase_vec)
+    pval_rep <- append(pval_rep, x$p.value)
+  }
+}
+
+pval_adjust_rep <- p.adjust(pval_rep, method = "fdr")
+pval_low_rep <- which(pval_adjust_rep < 0.1)
+sig_dif_proteins_rep <- rownames(df_normalized)[pval_low_rep]
+sig_dif_proteins_index_rep <- pval_low_rep
+
+length(sig_dif_proteins_rep) # names of proteins with significant t test (replicate values)
+length(sig_dif_proteins_index_rep) # index of proteins with significant t test (replicate values)
 ```
 
 ## RNA-dependent proteins
 
 ```{r}
-# without fdr correction
+# combined values
 rdeep <- c(intersect(sig_dif_proteins, shift_proteins))
-length(rdeep)
+rdeep_index <- c(intersect(sig_dif_proteins_index, shift_proteins_index))
 
-# with fdr correction
-rdeep2 <- c(intersect(sig_dif_proteins2, shift_proteins))
-length(rdeep2)
+length(rdeep)
+length(rdeep_index)
+
+# replicates
+rdeep_rep <- c(intersect(sig_dif_proteins_rep, shift_proteins))
+rdeep_index_rep <- c(intersect(sig_dif_proteins_index_rep, shift_proteins_index))
+
+length(rdeep_rep)
+length(rdeep_index_rep)
 ```
 
+```{r}
+# test whether everything went fine
 
-Cluster Idee: UMAP Clustern der Proteine und dann V1 und V2 gegeneinander plotten und Proteine färben, z.B. nach no shift, links shift, right shift
+sum(rownames(df_normalized)[rdeep_index] != rdeep)
+sum(rownames(df_normalized)[rdeep_index_rep] != rdeep_rep)
+```
 
-
+```{r}
+df_rdeep <- data.frame(row.names = rdeep_rep, index = rdeep_index_rep)
+saveRDS(df_rdeep, file = "RDeeP_HeLa_Mitosis_rdeep.rds")
+```
 
 
 

@@ -21,7 +21,7 @@ df_normalized_combined <- readRDS("RDeeP_HeLa_Mitosis_normalized_combined.rds")
 dim(df_normalized_combined)
 ```
 
-## global maxima
+## global maxima for combined values
 
 ```{r}
 d <- dim(df_normalized_combined)
@@ -29,9 +29,7 @@ rows <- d[1]
 columns <- d[2]
 fractions_ctrl <- 25
 fractions_RNase <- 25
-```
 
-```{r}
 df_global_maxima <- data.frame()
 proteins <- rownames(df_normalized_combined)
 fractionsnames <- colnames(df_normalized_combined)
@@ -81,7 +79,151 @@ dim(df_global_maxima)
 ```
 
 ```{r}
+# test whether both ways work the same, NOT IMPORTANT FOR REPORT
+ctrl_global_maximum_fraction <- c()
+ctrl_global_maximum_value <- c()
+rnase_global_maximum_fraction <- c()
+rnase_global_maximum_value <- c()
+
+for (i in 1:nrow(df_normalized_combined)) {
+  ctrl_global_maximum_value <-
+    append(ctrl_global_maximum_value, max(df_normalized_combined[i, 1:25]))
+  ctrl_global_maximum_fraction <-
+    append(ctrl_global_maximum_fraction,
+           which(df_normalized_combined[i, 1:25] == max(df_normalized_combined[i, 1:25])))
+  rnase_global_maximum_value <-
+    append(rnase_global_maximum_value, max(df_normalized_combined[i, 26:50]))
+  rnase_global_maximum_fraction <-
+    append(rnase_global_maximum_fraction,
+           which(df_normalized_combined[i, 26:50] == max(df_normalized_combined[i, 26:50])))
+  
+}
+
+df_global_maxima_test <-
+  data.frame(
+    row.names = rownames(df_normalized_combined),
+    ctrl_global_maximum_fraction = ctrl_global_maximum_fraction,
+    ctrl_global_maximum_value = ctrl_global_maximum_value,
+    rnase_global_maximum_fraction = rnase_global_maximum_fraction,
+    rnase_global_maximum_value = rnase_global_maximum_value
+  )
+
+sum(df_global_maxima != df_global_maxima_test)
+```
+
+```{r}
 saveRDS(df_global_maxima, file = "RDeeP_HeLa_Mitosis_global_maxima.rds")
+```
+
+## global maxima for every replicate
+
+In order to use the function above for every replicate, we need to split the data frame df_normalized into 6 data frames.
+
+```{r}
+df_normalized <- readRDS("RDeeP_HeLa_Mitosis_normalized.rds")
+
+df_ctrl1 <- df_normalized[,grep("Ctrl_Rep1", colnames(df_normalized))]
+df_ctrl2 <- df_normalized[,grep("Ctrl_Rep2", colnames(df_normalized))]
+df_ctrl3 <- df_normalized[,grep("Ctrl_Rep3", colnames(df_normalized))]
+df_rnase1 <- df_normalized[,grep("RNase_Rep1", colnames(df_normalized))]
+df_rnase2 <- df_normalized[,grep("RNase_Rep2", colnames(df_normalized))]
+df_rnase3 <- df_normalized[,grep("RNase_Rep3", colnames(df_normalized))]
+```
+
+```{r}
+find_global_maxima <- function(df) {
+  
+  d <- dim(df)
+  rows <- d[1]
+  columns <- d[2]
+  fractions_ctrl <- 25
+  #fractions_RNase <- 25
+  
+  df_output <- data.frame()
+  proteins <- rownames(df)
+  fractionsnames <- colnames(df)
+  
+  for (z in 1:rows) {
+    proteinname <- proteins[z]
+    
+    maxfc <- df[z, 1]
+    maxfcc <- 1
+    
+    for (fc in 2:25) {
+      if (maxfc < df[z, fc]) {
+        maxfc <- df[z, fc]
+        maxfcc <- fc
+      }
+    }
+    
+    #maxrna <- df[z, 26]
+    #maxfcr <- 26
+    
+    #for (fc in 27:50) {
+      #if (maxrna < df[z, fc]) {
+        #maxrna <- df[z, fc]
+        #maxfcr <- fc
+      #}
+    #}
+    
+    df_output <-
+      rbind(
+        df_output,
+        data.frame(
+          #global_maximum_ctrl_fraction1 = fractionsnames[maxfcc],
+          ctrl_global_maximum_fraction = maxfcc,
+          ctrl_global_maximum_value = maxfc
+          #global_maximum_rnase_fraction1 = fractionsnames[maxfcr],
+          #rnase_global_maximum_fraction = maxfcr - 25,
+          #rnase_global_maximum_value = maxrna
+        )
+      )
+  }
+  
+  rownames(df_output) <- rownames(df)
+  #View(df_global_maxima)
+  #dim(df_output)
+  
+  return(df_output)
+}
+```
+
+```{r}
+df_ctrl1_global_maxima <- find_global_maxima(df_ctrl1)
+df_ctrl2_global_maxima <- find_global_maxima(df_ctrl2)
+df_ctrl3_global_maxima <- find_global_maxima(df_ctrl3)
+df_rnase1_global_maxima <- find_global_maxima(df_rnase1)
+df_rnase2_global_maxima <- find_global_maxima(df_rnase2)
+df_rnase3_global_maxima <- find_global_maxima(df_rnase3)
+
+df_global_maxima_rep <-
+  cbind(
+    df_ctrl1_global_maxima,
+    df_ctrl2_global_maxima,
+    df_ctrl3_global_maxima,
+    df_rnase1_global_maxima,
+    df_rnase2_global_maxima,
+    df_rnase3_global_maxima
+  )
+colnames(df_global_maxima_rep) <-
+  c(
+    "ctrl1_global_maximum_fraction",
+    "ctrl1_global_maximum_value",
+    "ctrl2_global_maximum_fraction",
+    "ctrl2_global_maximum_value",
+    "ctrl3_global_maximum_fraction",
+    "ctrl3_global_maximum_value",
+    "rnase1_global_maximum_fraction",
+    "rnase1_global_maximum_value",
+    "rnase2_global_maximum_fraction",
+    "rnase2_global_maximum_value",
+    "rnase3_global_maximum_fraction",
+    "rnase3_global_maximum_value"
+  )
+```
+
+```{r}
+saveRDS(df_global_maxima_rep, file = "RDeeP_HeLa_Mitosis_global_maxima_rep.rds")
 ```
 
 ## local maxima 
