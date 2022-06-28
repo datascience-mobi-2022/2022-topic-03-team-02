@@ -96,6 +96,8 @@ For the purpose of determining global maxima, we used aforementioned vectors tha
 Significance of difference in protein amount was tested using a Student's t-test. Here, we tested whether the protein amount in each RNase replicate significantly differed from the protein amount at the averaged position of the global maximum in control. Thus, we tested significance of difference in protein amount for each protein in our data set, leading to a total of 7127 t-tests performed on our data set, each test being significant if the computed p-value $p$ was smaller than or equal to the chosen significance level $\alpha$ ($p \le \alpha$). At the same time, the probability of an individual statistical test to be false-positive (type I error, i. e. the mistaken rejection of an actually true null hypothesis) is also equal to the significance level $\alpha$, meaning that for a given $\alpha$ of 0.05, the probability of the individual t-test to produce a false-positive result is equal to 5%. However, performing multiple simultaneous statistical tests on the same data set, each having the probability $\alpha$ to produce a false-positive result, leads to a greater probability of making a type I error with respect to the whole family of performed t-tests than when considering each test individually, a phenomenon referred to as multiple testing problem. Thereby the probability of making one or more false discoveries when performing multiple hypotheses tests is given by the family-wise error rate (FWER; Fahrmeier Statistik): $FWER = 1-(1-\alpha)^k$, with $k$ being the number of independent t-tests to be performed on the given data set and $\alpha$ being the significance level of the individual t-test. Thus, choosing the generally used $\alpha$ of 0.05 would lead to a probability $\alpha^*$ of making one or more false discoveries with respect to all 7127 t-tests performed of $\alpha^* = 1-(1-0.05)^{7127}\approx1$, meaning around 100%. To counteract this, we used the Bonferroni correction, defining our new significance level as $\alpha_{new}=\frac {\alpha_{old}}{k}$. Therefore, t-tests werde regarded as significant if the computed p-value $p$ was smaller than or equal to the the new significance level of $\alpha_{new}=\frac {0.05}{7127}\approx7.02*10^{-6}$, leading to a new $\alpha^*$ of $\alpha^* = 1-(1-\frac{0.05}{7127})^{7127}\approx0.05$.
 
 
+- Nullhypothese und Alternativhypothese 
+
 \newpage
 
 # **Results**
@@ -109,3 +111,7 @@ Significance of difference in protein amount was tested using a Student's t-test
 -   \<0.6 in mind. einem Vergleich o allen 3en??
 
 -   Abbildung, um column-wise normalization zu erklären??
+```{r}
+FWE 
+```
+
