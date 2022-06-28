@@ -7,7 +7,6 @@ fontsize: 11pt
 #geometry: left = 1.5cm, right = 1.5cm, top = 1.5cm, bottom = 2cm
 geometry: margin = 2cm
 linestretch: 1.5
-
 #header-includes:
 #- \usepackage{helvet}
 #- \usepackage[T1]{fontenc}
@@ -18,7 +17,9 @@ linestretch: 1.5
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+
 \pagenumbering{gobble}
+
 \
 
 \
@@ -38,9 +39,10 @@ Students: Michel Tarnow, Michèle Bennek, Lennart Müller, Sebastian Rickert \ne
 
 # **Table Of Contents**
 
+```{=tex}
 \newpage
 \pagenumbering{arabic}
-
+```
 # **Introduction**
 
 RNA-binding proteins (RBPs) are a group of proteins who share the characteristic of directly binding to RNA molecules (Gebauer et al., 2021). Thus formed complexes are termed ribonucleoprotein particles (RNPs), prominent examples of which include the spliceosom (Corley et al. 2020), the signal recognition particle (Faoro and Ataide, 2021) and the RNA-induced silencing complex (Pratt and MacRae, 2009). RBPs play key regulatory functions in the life cycle of RNA molecules, including transcription, splicing, modification, intracellular trafficking, translation and degradation (Gebauer et al., 2021).
@@ -76,7 +78,7 @@ Furthermore, since all proteins investigated in our data set naturally show a he
 
 Next, we wanted to evaluate the reproducibility of our data. For this purpose, we computed the correlation (Pearson) between replicates within each condition in all possible combinations (for example, correlation between control replicate 1 and 2, 1 and 3 and 2 and 3). This allowed us to sort out single proteins whose data did not seem to be reproducible. We defined a threshold correlation value below which the data for given proteins was regarded as non-reproducible. For this purpose, we looked at the number of proteins we would have to discard for each threshold level between 0 and 0.8 in 0.05 steps:
 
-```{r echo=FALSE, cache=TRUE}
+```{r echo=FALSE, cache=FALSE}
 
 plot(seq(0, 0.8, 0.05), readRDS("tres_values.rds"), type = "b", xlab = "threshold value", ylab = "number of removed proteins", main = "")
 
@@ -91,12 +93,10 @@ Last, for each protein and condition, all three replicates were combined into a 
 
 As mentioned earlier, RNA-dependent proteins are expected to show an altered migration pattern in a sucrose density gradient after ultracentrifugation in the presence or absence of RNA. After performing aforementioned preliminary steps, we set to identify possible RNA-dependent proteins by interpreting this altered migration pattern, that is the distribution of normalized protein amount values across all 25 fractions for both conditions, control and RNase. For this it was necessary to define selection criteria proteins have to fulfill in order to qualify as RNA-dependent. Here, proteins are considered RNA-dependent when (i) the position of the global maximum of the protein amount across all 25 fractions shows a shift between control and RNase of 1 fraction or greater, and (ii) there is a significant difference in protein amount between the position of the global maximum in control and the respective fraction in RNase. This meant that first, we had to identify the global maximum for each protein in control and RNase condition, so that subsequently we could test for shift in position of the maximum and significance of difference in protein amount.
 
-For the purpose of determining global maxima, we used aforementioned vectors that combine all three replicates of a given condition using the mean value method. Global maxima for all proteins were then identified by determining the greatest value of protein amount across all 25 fractions for a given protein. This resulted in two values, the averaged position of the global maximum in control and averaged position of the global maximum in RNase, wich were used to calculate the absolute magnitude of the shift.
+For the purpose of determining global maxima, we used aforementioned vectors that combine all three replicates of a given condition using the mean value method. Global maxima for all proteins were then identified by determining the greatest value of protein amount across all 25 fractions for a given protein. This resulted in two values, the averaged position of the global maximum in control and averaged position of the global maximum in RNase, which were used to calculate the absolute magnitude of the shift.
 
-Significance of difference in protein amount was tested using a Student's t-test. Here, we tested whether the protein amount in each RNase replicate significantly differed from the protein amount at the averaged position of the global maximum in control. Thus, we tested significance of difference in protein amount for each protein in our data set, leading to a total of 7127 t-tests performed on our data set, each test being significant if the computed p-value $p$ was smaller than or equal to the chosen significance level $\alpha$ ($p \le \alpha$). At the same time, the probability of an individual statistical test to be false-positive (type I error, i. e. the mistaken rejection of an actually true null hypothesis) is also equal to the significance level $\alpha$, meaning that for a given $\alpha$ of 0.05, the probability of the individual t-test to produce a false-positive result is equal to 5%. However, performing multiple simultaneous statistical tests on the same data set, each having the probability $\alpha$ to produce a false-positive result, leads to a greater probability of making a type I error with respect to the whole family of performed t-tests than when considering each test individually, a phenomenon referred to as multiple testing problem. Thereby the probability of making one or more false discoveries when performing multiple hypotheses tests is given by the family-wise error rate (FWER; Fahrmeier Statistik): $FWER = 1-(1-\alpha)^k$, with $k$ being the number of independent t-tests to be performed on the given data set and $\alpha$ being the significance level of the individual t-test. Thus, choosing the generally used $\alpha$ of 0.05 would lead to a probability $\alpha^*$ of making one or more false discoveries with respect to all 7127 t-tests performed of $\alpha^* = 1-(1-0.05)^{7127}\approx1$, meaning around 100%. To counteract this, we used the Bonferroni correction, defining our new significance level as $\alpha_{new}=\frac {\alpha_{old}}{k}$. Therefore, t-tests werde regarded as significant if the computed p-value $p$ was smaller than or equal to the the new significance level of $\alpha_{new}=\frac {0.05}{7127}\approx7.02*10^{-6}$, leading to a new $\alpha^*$ of $\alpha^* = 1-(1-\frac{0.05}{7127})^{7127}\approx0.05$.
+Significance of difference in protein amount was tested using a Student's t-test. Here, we tested whether the protein amount in each RNase replicate significantly differed from the protein amount at the averaged position of the global maximum in control. Thus, we tested significance of difference in protein amount for each protein in our data set, leading to a total of 7127 t-tests performed on our data set. P-values were corrected for multiple testing by controlling the false-discovery rate (FDR) according to Benjamini and Hochberg (1995), using the function `p.adjust`. Therefore, difference in protein amount was regarded as significant if the FDR-corrected p-value $p$ was smaller than the chosen significance level of $\alpha=0.05$. 
 
-
-- Nullhypothese und Alternativhypothese 
 
 \newpage
 
@@ -111,7 +111,3 @@ Significance of difference in protein amount was tested using a Student's t-test
 -   \<0.6 in mind. einem Vergleich o allen 3en??
 
 -   Abbildung, um column-wise normalization zu erklären??
-```{r}
-FWE 
-```
-
