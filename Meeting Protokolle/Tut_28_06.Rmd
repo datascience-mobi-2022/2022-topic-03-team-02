@@ -1,0 +1,22 @@
+---
+title: "Tut 28.06."
+author: "Basti"
+date: '2022-06-28'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+Clustering Ideen:
+Clustern, dann anfärben welche shits und schauen was für ergebnisse
+
+t-tests auf control/rnase?
+Wir können maxima aller 6 werte miteinbeziehen, jenachdem wie streng wir normalisiert haben müssen wir auch ort des t-tests anpassen,
+Entweder bei beiden reps alleine oder bei beiden reps gemeinsam, aktuell jedoch nicht beides gleich -> ändern
+
+Bekommen wir daten zum testen/trainieren?
+Ja bekommen wir können aber auch einfach aus online datenbank
+cross-validation -> datensatz splitten
+k-fold cross validation + leave one out cross validation (LOOCV)
+-> kein Datensatz mit zentrifugationsdaten
