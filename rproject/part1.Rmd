@@ -429,7 +429,7 @@ if (length(remove_proteins) != 0) {
 dim(df_normalized)
 ```
 
-Now, we have removed 64 proteins due to an expected low reproducibility. We can save this data frame as a new file **RDeeP_HeLa_Mitosis_normalized.rds**:
+Now, we have removed 25 proteins due to an expected low reproducibility. We can save this data frame as a new file **RDeeP_HeLa_Mitosis_normalized.rds**:
 
 ```{r}
 saveRDS(df_normalized, file = "RDeeP_HeLa_Mitosis_normalized.rds")

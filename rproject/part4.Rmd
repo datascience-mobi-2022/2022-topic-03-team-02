@@ -10,6 +10,7 @@ knitr::opts_chunk$set(echo = TRUE)
 knitr::opts_chunk$set(cache = TRUE)
 library("tidyverse")
 library("uwot")
+library("factoextra")
 ```
 
 ## Michel's Part
@@ -57,12 +58,26 @@ for (i in 1:nrow(df_umap)) {
   } else {
     df_umap[i, 3] <- "no shift"
   }
-  
+}
+```
+
+```{r}
+for (i in 1:nrow(df_umap)) {
+  if (rownames(df_umap)[i] %in% rownames(df_rdeep)) {
+    df_umap$rdeep[i] <- "rdeep"
+  } else {
+    df_umap$rdeep[i] <- "non rdeep"
+  }
 }
 ```
 
 ```{r}
 ggplot(df_umap, aes(x = V1, y = V2, color = shift)) +
+  geom_point()
+```
+
+```{r}
+ggplot(df_umap, aes(x = V1, y = V2, color = rdeep)) +
   geom_point()
 ```
 
@@ -141,6 +156,53 @@ ggplot(
 ) +
   geom_jitter()
 ```
+
+## Michèle's Part
+
+```{r}
+df_cluster <- as.data.frame(cbind(shift_global, pval_adjust_rep))
+rownames(df_cluster) <- rownames(df_normalized)
+```
+
+```{r}
+ggplot(df_cluster, aes(x = abs(shift_global), y = pval_adjust_rep)) +
+  geom_point()
+```
+
+```{r}
+wss = sapply(2:10, function(x) { 
+  kmeans(df_normalized_combined, centers = x, nstart = 100)$tot.withinss
+})
+plot(2:10, wss, xlab = "numbers of centers", ylab = "total within-cluster sum of squares", type = "b")
+```
+
+```{r}
+km <- kmeans(df_normalized_combined, centers = 3)
+
+fviz_cluster(km, data = df_normalized_combined,
+             #palette = c("#2E9FDF", "#00AFBB", "#E7B800"), 
+             geom = "point",
+             ellipse.type = "convex", 
+             ggtheme = theme_bw()
+             )
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

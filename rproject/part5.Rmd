@@ -27,7 +27,6 @@ cor(tdf$`1433B_HUMAN`[1:25], tdf$`1433B_HUMAN`[26:50]) # non-RDeeP
 ```
 
 Using this, we can try to make a linear regression model.
-
 ```{r}
 # create df that will contain important information for linear modelling
 df_lm <- data.frame(row.names = colnames(tdf))
@@ -37,19 +36,11 @@ vec_cor <- apply(tdf, 2, function(x) {
   cor(x[1:25], x[26:50])
 })
 df_lm$correlation <- vec_cor
-
-# add vector containing whether one protein is rdeep or not to df
-df_lm$RDeeP <- 0
-
-for (i in 1:nrow(df_lm)) {
-  if (sum(rownames(df_lm)[i] == rdeep2) == 1) {
-    df_lm$RDeeP[i] = 1
-  }
-}
+df_lm$shift <- shift_global
 ```
 
 ```{r}
-linear_model <- lm(RDeeP ~ correlation, data = df_lm)
+linear_model <- lm(shift ~ correlation, data = df_lm)
 summary(linear_model)
 ```
 
@@ -67,7 +58,7 @@ plot(df_lm$correlation, linear_model$residuals, pch = 20)
 
 ```{r}
 plot(
-  df_lm$RDeeP,
+  df_lm$shift,
   linear_model$fitted.values,
   pch = 20,
   col = 'blue',
