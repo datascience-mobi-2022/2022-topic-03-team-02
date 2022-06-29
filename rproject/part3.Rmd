@@ -103,8 +103,8 @@ Tested and verified!
 df_test <- df_global_maxima[-shift_proteins_index, ]
 shift_global_test <- c()
 
-for (i in 1:nrow(df)) {
-  x <- df[i, 3] - df[i, 1]
+for (i in 1:nrow(df_test)) {
+  x <- df_test[i, 3] - df_test[i, 1]
   shift_global_test <- append(shift_global_test, x)
 }
 which(shift_global_test > 1)
@@ -134,7 +134,7 @@ for (i in 1:nrow(df_global_maxima)) {
 }
 
 pval_adjust <- p.adjust(pval, method = "fdr")
-pval_low <- which(pval_adjust < 0.1)
+pval_low <- which(pval_adjust < 0.05)
 sig_dif_proteins <- rownames(df_global_maxima)[pval_low]
 sig_dif_proteins_index <- pval_low
 
@@ -159,7 +159,7 @@ for (i in 1:nrow(df_global_maxima_rep)) {
       df_normalized[i, df_global_maxima_rep[i, 5] + 125])
   
   if (abs(sum(ctrl_vec)) > 299.99 & abs(sum(rnase_vec) > 299.99)) {
-    pval2 <- append(pval2, 1)
+    pval_rep <- append(pval_rep, 1)
   } else {
     x <- t.test(ctrl_vec, rnase_vec)
     pval_rep <- append(pval_rep, x$p.value)
@@ -167,7 +167,7 @@ for (i in 1:nrow(df_global_maxima_rep)) {
 }
 
 pval_adjust_rep <- p.adjust(pval_rep, method = "fdr")
-pval_low_rep <- which(pval_adjust_rep < 0.1)
+pval_low_rep <- which(pval_adjust_rep < 0.05)
 sig_dif_proteins_rep <- rownames(df_normalized)[pval_low_rep]
 sig_dif_proteins_index_rep <- pval_low_rep
 
