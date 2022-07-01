@@ -11,7 +11,7 @@ knitr::opts_chunk$set(cache = TRUE)
 library("tidyverse")
 ```
 
-## Michel's part
+## predict shift with correlation
 
 load data:
 ```{r}
@@ -67,6 +67,12 @@ plot(
 )
 ```
 
+```{r}
+nd <- as.data.frame(df_lm$correlation)
+colnames(nd) <- c("correlation")
+
+predict.lm(linear_model, newdata = nd)
+```
 
 
 
