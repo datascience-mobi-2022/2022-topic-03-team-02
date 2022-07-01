@@ -13,27 +13,30 @@ library("uwot")
 library("factoextra")
 ```
 
-## Michel's Part
+## Dimension Reduction
 
 Load the normalized and combined data:
 ```{r}
 df_normalized_combined <- readRDS("RDeeP_HeLa_Mitosis_normalized_combined.rds")
+df_normalized <- readRDS("RDeeP_HeLa_Mitosis_normalized.rds")
 ```
 
-Perform pca and umap or only umap or only pca on data:
+Perform pca and umap or only umap or only pca on our data:
 ```{r}
+df <- df_normalized_combined # we can use this variable to easily switch between combined and not combined
+  
 # df_umap1: pca and umap
-pca <- prcomp(df_normalized_combined)
+pca <- prcomp(df)
 df_umap1 <- as.data.frame(umap(pca$x))
 
 # df_umap2 : only umap
-df_umap2 <- as.data.frame(umap(df_normalized_combined))
+df_umap2 <- as.data.frame(umap(df))
 
 # df_pca: only pca
-df_pca <- as.data.frame(prcomp(df_normalized_combined)$x)
+df_pca <- as.data.frame(prcomp(df)$x)
 ```
 
-Plot both results to see wether they differ or not:
+Plot the results to see whether they differ or not:
 ```{r}
 ggplot(df_umap1, aes(x = V1, y = V2)) +
   geom_point()
@@ -45,6 +48,7 @@ ggplot(df_pca, aes(x = PC1, y = PC2)) +
   geom_point()
 ```
 
+Now, we can colour proteins according to their shifting behaviour.
 ```{r}
 n = 1
 df_umap <- cbind(df_umap1, matrix(0, nrow(df_normalized_combined), 1))
@@ -61,6 +65,7 @@ for (i in 1:nrow(df_umap)) {
 }
 ```
 
+We can also colour proteins according to our results (non-RDeep or RDeeP).
 ```{r}
 for (i in 1:nrow(df_umap)) {
   if (rownames(df_umap)[i] %in% rownames(df_rdeep)) {
@@ -73,12 +78,14 @@ for (i in 1:nrow(df_umap)) {
 
 ```{r}
 ggplot(df_umap, aes(x = V1, y = V2, color = shift)) +
-  geom_point()
+  geom_point() +
+  ggtitle("UMAP of normalized and combined data")
 ```
 
 ```{r}
 ggplot(df_umap, aes(x = V1, y = V2, color = rdeep)) +
-  geom_point()
+  geom_point() +
+  ggtitle("UMAP of normalized and combined data")
 ```
 
 ```{r}
@@ -118,7 +125,7 @@ ggplot(df_pca_shift, aes(x = PC1, y = PC2, color = shift)) +
 ```
 
 
-## Michel 2
+## group proteins according to their shifting behaviour
 
 ```{r}
 df_global_maxima <- readRDS("RDeeP_HeLa_Mitosis_global_maxima.rds")
@@ -144,29 +151,37 @@ for (i in 1:nrow(df_global_maxima_shift)) {
 ```{r}
 ggplot(
   df_global_maxima_shift,
-  aes(y = ctrl_global_maximum_fraction, x = rnase_global_maximum_fraction, color = shift)
-) +
-  geom_count()
+  aes(y = ctrl_global_maximum_fraction, x = rnase_global_maximum_fraction, color = shift)) +
+  geom_count() +
+  ggtitle("shifting behaviour of proteins") +
+  xlab("global maximum RNase condition") + ylab("global maximum Ctrl conditions")
 ```
 
 ```{r}
 ggplot(
   df_global_maxima_shift,
-  aes(y = ctrl_global_maximum_fraction, x = rnase_global_maximum_fraction, color = shift)
-) +
-  geom_jitter()
+  aes(y = ctrl_global_maximum_fraction, x = rnase_global_maximum_fraction, color = shift)) +
+  geom_jitter() +
+  ggtitle("shifting behaviour of proteins") +
+  xlab("global maximum RNase condition") + ylab("global maximum Ctrl conditions")
 ```
 
-## Michèle's Part
+## kmeans with protein amount
 
 ```{r}
 df_cluster <- as.data.frame(cbind(shift_global, pval_adjust_rep))
 rownames(df_cluster) <- rownames(df_normalized)
-```
 
-```{r}
-ggplot(df_cluster, aes(x = abs(shift_global), y = pval_adjust_rep)) +
-  geom_point()
+for (i in 1:nrow(df_cluster)) {
+  if (rownames(df_cluster)[i] %in% rownames(df_rdeep)) {
+    df_cluster$rdeep[i] <- "rdeep"
+  } else {
+    df_cluster$rdeep[i] <- "non rdeep"
+  }
+}
+
+df_cluster$ctrl_maximum <- df_global_maxima$ctrl_global_maximum_fraction
+df_cluster$rnase_maximum <- df_global_maxima$rnase_global_maximum_fraction
 ```
 
 ```{r}
@@ -177,7 +192,8 @@ plot(2:10, wss, xlab = "numbers of centers", ylab = "total within-cluster sum of
 ```
 
 ```{r}
-km <- kmeans(df_normalized_combined, centers = 3)
+tdf_normalized_combined <- t(df_normalized_combined)
+km <- kmeans(df_normalized_combined, centers = 3, nstart = 100)
 
 fviz_cluster(km, data = df_normalized_combined,
              #palette = c("#2E9FDF", "#00AFBB", "#E7B800"), 
@@ -188,7 +204,45 @@ fviz_cluster(km, data = df_normalized_combined,
 ```
 
 
+```{r}
+df_cluster$cluster <- as.character(km$cluster)
 
+ggplot(
+  df_cluster,
+  aes(y = ctrl_maximum, x = rnase_maximum, color = cluster)) +
+  geom_count() +
+  ggtitle("shifting behaviour of proteins") +
+  xlab("global maximum RNase condition") + ylab("global maximum Ctrl conditions")
+```
+
+```{r}
+df_umap$cluster <- as.character(km$cluster)
+
+ggplot(df_umap, aes(x = V1, y = V2, color = cluster)) +
+  geom_point() +
+  ggtitle("UMAP of normalized and combined data")
+```
+
+## kmeans with shift
+
+```{r}
+km2 <- kmeans(df_cluster[,1], centers = 3)
+```
+
+```{r}
+df_umap$cluster2 <- as.character(km2$cluster)
+
+ggplot(df_umap, aes(x = V1, y = V2, color = cluster2)) +
+  geom_point() +
+  ggtitle("UMAP of normalized and combined data")
+```
+
+## more stuff
+
+```{r}
+ggplot(df_cluster, aes(x = abs(shift_global), y = pval_adjust_rep, color = rdeep)) +
+  geom_count()
+```
 
 
 
