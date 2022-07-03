@@ -7,11 +7,9 @@ fontsize: 11pt
 #geometry: left = 1.5cm, right = 1.5cm, top = 1.5cm, bottom = 2cm
 geometry: margin = 2cm
 linestretch: 1.5
-#header-includes:
-#- \usepackage{helvet}
-#- \usepackage[T1]{fontenc}
-#- \renewcommand\familydefault{\sfdefault}
-#bibliography: references.bib
+
+bibliography: references.bib
+csl: citationstyle.csl
 
 ---
 \begin{document}
@@ -47,20 +45,20 @@ Students: Michel Tarnow, Michèle Bennek, Lennart Müller, Sebastian Rickert \ne
 ```
 # **1. Introduction**
 
-RNA-binding proteins (RBPs) are a group of proteins who share the characteristic of directly binding to RNA molecules (Gebauer et al., 2021). Thus formed complexes are termed ribonucleoprotein particles (RNPs), prominent examples of which include the spliceosom (Corley et al. 2020), the signal recognition particle (Faoro and Ataide, 2021) and the RNA-induced silencing complex (Pratt and MacRae, 2009). RBPs play key regulatory functions in the life cycle of RNA molecules, including transcription, splicing, modification, intracellular trafficking, translation and degradation (Gebauer et al., 2021).
+RNA-binding proteins (RBPs) are a group of proteins who share the characteristic of directly binding to RNA molecules [@gebauer2021rna]. Thus formed complexes are termed ribonucleoprotein particles (RNPs), prominent examples of which include the spliceosom [@corley2020rna], the signal recognition particle [@faoro2021noncanonical] and the RNA-induced silencing complex [@pratt2009rna]. RBPs play key regulatory functions in the life cycle of RNA molecules, including transcription, splicing, modification, intracellular trafficking, translation and degradation [@gebauer2021rna].
 
-RBPs are known to bear discrete domains that are responsible for the molecular interactions between amino acid residues and RNA nucleotides that lead to RNA binding, and which for this reason are defined as RNA-binding domains (RBDs), such as the RNA recognition motif, the K-homology domain or DEAD/DEAH helicase and zinc-finger domains (Corley et al., 2020). Although the occurrence of one or more of these domains is characteristic of RBPs, more recent research has identified RBPs that lack known RBDs but instead bind RNA through intrinsically disordered regions (Gebauer et al., 2021), indicating the heterogeneity of this group of proteins.
+RBPs are known to bear discrete domains that are responsible for the molecular interactions between amino acid residues and RNA nucleotides that lead to RNA binding, and which for this reason are defined as RNA-binding domains (RBDs), such as the RNA recognition motif, the K-homology domain or DEAD/DEAH helicase and zinc-finger domains [@corley2020rna]. Although the occurrence of one or more of these domains is characteristic of RBPs, more recent research has identified RBPs that lack known RBDs but instead bind RNA through intrinsically disordered regions [@gebauer2021rna], indicating the heterogeneity of this group of proteins.
 
-Since RBPs are key players in RNA metabolism, their malfunction has been associated with diverse pathological phenotypes, including cancer (Zhang et al., 2020) and neurodegenerative disorders (Maziuk et al., 2017). Therefore, identifying new RBPs may contribute to point out novel drug targets for already known conditions on the one hand and to shed new light on the diseased mechanisms of yet unresolved conditions on the other.
+Since RBPs are key players in RNA metabolism, their malfunction has been associated with diverse pathological phenotypes, including cancer [@zhang2020comprehensive] and neurodegenerative disorders [@maziuk2017dysregulation]. Therefore, identifying new RBPs may contribute to point out novel drug targets for already known conditions on the one hand and to shed new light on the diseased mechanisms of yet unresolved conditions on the other.
 
-While the study and quantification of RBPs has received much attention in previous research, the exact number of mammalian RBPs remains a matter of debate. Techniques for proteome-wide screening of RBPs in the past heavily relied on pull-down assays of polyadenylated RBPs (Beckmann et al., 2015; Castello et al., 2012), protease digestion (Mullari et al., 2017) or UV cross-linking (Urdaneta et al., 2019), each method having its advantages and shortcomings. Thus, current estimations about the number of RBPs remain largely inconsistent across studies, leading only to a small consensus set of around 200 proteins (Caudron-Herger et al., 2019).
+While the study and quantification of RBPs has received much attention in previous research, the exact number of mammalian RBPs remains a matter of debate. Techniques for proteome-wide screening of RBPs in the past heavily relied on pull-down assays of polyadenylated RBPs [@beckmann2016expanding; @castello2016comprehensive], protease digestion [@mullari2017specifying] or UV cross-linking [@urdaneta2019purification], each method having its advantages and shortcomings. Thus, current estimations about the number of RBPs remain largely inconsistent across studies, leading only to a small consensus set of around 200 proteins [@caudron2019r].
 
 While not devoid of its own limitations, the here presented method provides a novel approach to the proteome-wide screening of RBPs with the goal of validating the core set of RBPs previously defined while also contributing to adding new proteins to the number of possible RBP candidates.\
-For this purpose, the notion of RNA dependence was introduced, defining a protein as RNA dependent when its interactome depends on RNA, while binding to RNA is sufficient but not necessary to qualify as RNA dependent. Thus, every RNA binding protein is RNA dependent, but not every RNA dependent protein is RNA binding (Caudron-Herger et al., 2019).
+For this purpose, the notion of RNA dependence was introduced, defining a protein as RNA dependent when its interactome depends on RNA, while binding to RNA is sufficient but not necessary to qualify as RNA dependent. Thus, every RNA binding protein is RNA dependent, but not every RNA dependent protein is RNA binding [@caudron2019r].
 
 The method here employed relies on the differential migration pattern of proteins in a sucrose density gradient ultracentrifugation in the presence or absence of RNA.\
 In density gradient centrifugation, macromolecules such as proteins are forced through a density gradient until they find a density equal to their own (Farrell, 2010). Thereby the rate of sedimentation is function of size, shape and density of the macromolecules, as well as density and viscosity of the gradient and applied centrifugal force (Raschke et al., 2009).\
-Here, triplicates of native (control) and RNase-treated cell lysates from HeLa cells synchronized in mitosis were loaded onto a 5% to 50% sucrose density gradient. Upon ultracentrifugation, the gradient was divided into 25 fractions and the protein amount of individual proteins per fraction determined by quantitative mass spectrometry. Because RNA-dependent proteins directly or indirectly depend on the presence of RNA, they are expected to show a different migration pattern between control and RNase-treated groups (Caudron-Herger et al., 2019).
+Here, triplicates of native (control) and RNase-treated cell lysates from HeLa cells synchronized in mitosis were loaded onto a 5% to 50% sucrose density gradient. Upon ultracentrifugation, the gradient was divided into 25 fractions and the protein amount of individual proteins per fraction determined by quantitative mass spectrometry. Because RNA-dependent proteins directly or indirectly depend on the presence of RNA, they are expected to show a different migration pattern between control and RNase-treated groups [@caudron2019r].
 
 In this report, we seek to draw a qualified conclusion about the RNA-dependence status of the 7160 proteins investigated in the provided data set using bioinformatics and statistics. For this purpose, we will define criteria and parameters the given proteins need to fulfill to qualify as RNA-dependent, and will evaluate our given data with respect to aforementioned aspects using the programming language R. Eventually, we will discuss the significance and possible limitations of our methods and findings.
 
@@ -97,7 +95,7 @@ As mentioned earlier, RNA-dependent proteins are expected to show an altered mig
 
 For the purpose of determining the shift in position of the global maximum, we used aforementioned vectors that combine all three replicates of a given condition using the mean value method. Global maxima for all proteins were then identified by determining the greatest value of protein amount across all 25 fractions for a given protein. This resulted in two values, the averaged position of the global maximum in control and the averaged position of the global maximum in RNase, which were used to calculate the absolute magnitude of the shift.
 
-Significance of difference in protein amount was tested using a Student's t-test. Here, for every given protein, we first determined the global maximum for each replicate in control, yielding a vector containing the magnitude and the respective fraction of each maximum. Subsequently, protein amount values at the respective fractions in RNase were determined, yielding a second vector containing protein amount values at the respective fractions. We then tested whether protein amount values from the first vector significantly differed from those of the second vector and thus tested significance of difference in protein amount for each protein in our data set, leading to a total of 7127 t-tests performed. P-values were corrected for multiple testing by controlling the false-discovery rate (FDR) according to Benjamini and Hochberg (1995), using the function `p.adjust`. Therefore, difference in protein amount was regarded as significant if the FDR-corrected p-value $p$ was smaller than the chosen significance level of $\alpha=0.05$. 
+Significance of difference in protein amount was tested using a Student's t-test. Here, for every given protein, we first determined the global maximum for each replicate in control, yielding a vector containing the magnitude and the respective fraction of each maximum. Subsequently, protein amount values at the respective fractions in RNase were determined, yielding a second vector containing protein amount values at the respective fractions. We then tested whether protein amount values from the first vector significantly differed from those of the second vector and thus tested significance of difference in protein amount for each protein in our data set, leading to a total of 7127 t-tests performed. P-values were corrected for multiple testing by controlling the false-discovery rate (FDR) according to @benjamini1995controlling, using the function `p.adjust`. Therefore, difference in protein amount was regarded as significant if the FDR-corrected p-value $p$ was smaller than the chosen significance level of $\alpha=0.05$. 
 
 ## **2.3 Performing Dimension Reduction Analysis**
 
@@ -120,3 +118,8 @@ According to aforementioned methods and criteria, we computed the RNA-dependence
 -   \<0.6 in mind. einem Vergleich o allen 3en??
 
 -   Abbildung, um column-wise normalization zu erklären??
+\newpage
+
+# **References**
+
+
