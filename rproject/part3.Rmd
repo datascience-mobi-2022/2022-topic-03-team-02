@@ -208,7 +208,13 @@ saveRDS(df_rdeep, file = "RDeeP_HeLa_Mitosis_rdeep.rds")
 
 
 
+Edit: Maybe we can also define proteins as RDeeP if their shift is great enough, even if the t-test is not significant (e.g. shift > 8)
 
+```{r}
+length(which(shift_global > 8))
+x <- which(shift_global > 8)
+names(shift_global)[x]
+```
 
 
 
