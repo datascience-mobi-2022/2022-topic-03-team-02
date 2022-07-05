@@ -55,13 +55,13 @@ summary(linear_model)
 
 We can now check some things to decide whether this model is valid or not (residuals normally distributed, residuals not correlated to explanatory variable).
 ```{r}
-# normal distribution of residuals?
+# normal distribution of residuals?seems good
 hist(linear_model$residuals, breaks = 20)
 
 qqnorm(linear_model$residuals)
 qqline(linear_model$residuals)
 
-## correlation residuals x-values?
+## correlation residuals x-values? seems good
 cor(df_lm_train$correlation, linear_model$residuals)
 plot(df_lm_train$correlation, linear_model$residuals, pch = 20)
 ```
