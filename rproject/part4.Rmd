@@ -77,8 +77,10 @@ for (i in 1:nrow(df_umap)) {
 ```
 
 ```{r}
+alpha <- ifelse(df_umap$shift == "no shift", 0.1, 1)
+
 ggplot(df_umap, aes(x = V1, y = V2, color = shift)) +
-  geom_point() +
+  geom_point(alpha = alpha) +
   ggtitle("UMAP of normalized and combined data")
 ```
 
