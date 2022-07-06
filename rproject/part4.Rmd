@@ -239,6 +239,13 @@ ggplot(df_umap, aes(x = V1, y = V2, color = cluster2)) +
   ggtitle("UMAP of normalized and combined data")
 ```
 
+```{r}
+wss = sapply(2:10, function(x) { 
+  kmeans(df_cluster[,1], centers = x, nstart = 100)$tot.withinss
+})
+plot(2:10, wss, xlab = "numbers of centers", ylab = "total within-cluster sum of squares", type = "b")
+```
+
 ## more stuff
 
 ```{r}

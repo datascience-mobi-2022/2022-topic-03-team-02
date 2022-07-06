@@ -133,6 +133,8 @@ plot(
 ```
 
 
-
+- Model quantifizieren Konfidenzintervalle, Standard Fehler
+- Lokale Maxima globales Profil, großer Unterschied oder nicht
+- ein Skript machen
 
 
