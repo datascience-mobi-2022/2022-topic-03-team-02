@@ -86,6 +86,26 @@ plot(
 ```
 !!! Model describes left shift very good, but right shifts not !!!
 
+We can also try to evaluate how accurate our model is by having a look at the confidence intervals.
+```{r}
+counter <- 0
+
+for (i in 1:nrow(df_lm_predict)) {
+  if (df_lm_predict$V1[i] > df_lm_predict$lwr[i] & df_lm_predict$V1[i] < df_lm_predict$upr[i]) {
+    counter <- counter + 1
+  }
+}
+
+counter / nrow(df_lm_predict) * 100  
+```
+
+Only 6% of the real shifts are in between the boarders of the confidence interval...
+We can also have a look at the standard errors for every prediction.
+```{r}
+mean(pm$se.fit)
+```
+
+
 ## same model but absolut shift values
 
 ```{r}
@@ -132,9 +152,72 @@ plot(
 ); abline(0, 1, col = "blue", lwd = 5)
 ```
 
+```{r}
+counter <- 0
 
-- Model quantifizieren Konfidenzintervalle, Standard Fehler
-- Lokale Maxima globales Profil, großer Unterschied oder nicht
-- ein Skript machen
+for (i in 1:nrow(df_lm_predict_ab)) {
+  if (df_lm_predict_ab$V1[i] > df_lm_predict_ab$lwr[i] & df_lm_predict_ab$V1[i] < df_lm_predict_ab$upr[i]) {
+    counter <- counter + 1
+  }
+}
+
+counter / nrow(df_lm_predict_ab) * 100  
+```
+
+```{r}
+mean(pm_ab$se.fit)
+```
+
+## comparison with local maxima
+
+To have a look at the local maxima as well, we are going to calculate a global profile for every protein's local maxima by computing the squared sums of the maxima's fractions for both conditions. Later, we can use this information to compare the results with our RDeePs in order to see whether leaving out the local maxima was making our results less accurate.
+
+```{r}
+df_local_maxima <- readRDS("RDeeP_HeLa_Mitosis_local_maxima.rds")
+```
+
+```{r}
+# compute squared sums of fractions for both conditions
+
+df_local_maxima_qs <-
+  data.frame(row.names = rownames(df_local_maxima))
+
+for (i in 1:nrow(df_local_maxima_qs)) {
+  df_local_maxima_qs$ctrl[i] <-
+    sqrt(
+      df_local_maxima$ctrl_local_maximum1_fraction[i] ** 2 + df_local_maxima$ctrl_local_maximum2_fraction[i] ** 2 +   df_local_maxima$ctrl_local_maximum3_fraction[i] ** 2 + df_local_maxima$ctrl_local_maximum4_fraction[i] ** 2 +     df_local_maxima$ctrl_local_maximum5_fraction[i] ** 2
+    )
+  
+  df_local_maxima_qs$rnase[i] <-
+    sqrt(
+      df_local_maxima$rnase_local_maximum1_fraction[i] ** 2 + df_local_maxima$rnase_local_maximum2_fraction[i] ** 2 +   df_local_maxima$rnase_local_maximum3_fraction[i] ** 2 + df_local_maxima$rnase_local_maximum4_fraction[i] ** 2 +   df_local_maxima$rnase_local_maximum5_fraction[i] ** 2
+    )
+}
+```
+
+```{r}
+# add difference to data frame (absolute difference)
+
+df_local_maxima_qs$dif <- abs(df_local_maxima_qs$ctrl - df_local_maxima_qs$rnase)
+shift_proteins_l <- c(rownames(df_local_maxima_qs)[which(df_local_maxima_qs$dif > 5)])
+length(shift_proteins_l)
+```
+
+```{r}
+# RDeePs if global and local
+
+shift_proteins_lg <- c(intersect(shift_proteins, shift_proteins_l))
+length(c(intersect(shift_proteins_lg, sig_dif_proteins_rep)))
+```
+
+```{r}
+# RDeePs if global or local
+
+x1 <- c(intersect(shift_proteins, sig_dif_proteins_rep))
+x2 <- c(intersect(shift_proteins_l, sig_dif_proteins_rep))
+
+x3 <- c(x1, x2)
+length(unique(x3))
+```
 
 
