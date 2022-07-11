@@ -75,7 +75,7 @@ Anyway, that does not really help us choosing the right value for n.
 
 n = 1
 ```{r}
-n = 0 # shift must be greater than n
+n = 1 # shift must be greater than n
 shift_proteins <- c() # in here, the proteins which are shifting are saved
 shift_proteins_index <- c()
 counter <- 0
