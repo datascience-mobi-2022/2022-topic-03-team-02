@@ -1,0 +1,1785 @@
+---
+title: "Analysis 1-5"
+author: "Michèle, Lennart, Michel, Sebastian"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(cache = TRUE)
+library("tidyverse")
+library("uwot")
+library("factoextra")
+```
+
+
+# PART 1
+
+## load data
+
+The data frame is loaded as describe on the Github page for project 3.
+```{r}
+MS_Table <- read.table("RDeeP_HeLa_Mitosis.csv", header = TRUE, row.names = 1, sep = ";")
+```
+
+```{r}
+head(rownames(MS_Table),12)
+```
+
+```{r}
+head(colnames(MS_Table),12)
+```
+
+## data cleanup
+
+First, we want to check whether every column's data type is numeric.
+```{r}
+sum(apply(MS_Table, 2, is.numeric)) == ncol(MS_Table)
+glimpse(MS_Table)
+```
+
+Every column's data type is numeric (double)! 
+
+We want to remove every row that has only zeros or negative numbers in at least one of the 3 replicates for each condition (RNase or Ctrl). Those rows will not help us to identify shifts and therefore to identify RNA-depending proteins.
+```{r}
+# find all proteins that contain only zeros in at least one replicate
+
+del_row <- c()
+# save those proteins (row number) in del_row
+
+for (i in c("Ctrl_Rep1", "Ctrl_Rep2", "Ctrl_Rep3", "RNase_Rep1", "RNase_Rep2", "RNase_Rep3")) {
+  # iterate through all replicates
+  
+  for (j in 1:nrow(MS_Table)) {
+    # iterate through all values
+    
+    if (sum(MS_Table[j, grep(i, colnames(MS_Table))]) <= 0) {
+      del_row <- append(del_row, j)
+    }
+  }
+}
+del_row_sort <- sort(unique(del_row))
+del_row_sort
+```
+
+(Then we want to check whether the rows contain only zeros in all replicates, or just in one or two replicates, which could allow us to use mean values as a replacement.)
+
+```{r}
+#Keep the rows in which only one replicate has no values, but the other replicates have normal values
+#del_row_sort gives the numbers of the rows which include only zeros in at least one replicate
+#del_row_refined = sort(unique(del_row)[table(del_row)<=2])
+
+#for (i in del_row__refined) {
+  #iterate through all rows in which there are only zeros in at least one replicate
+  
+#  for(j in c("Ctrl_Rep1", "Ctrl_Rep2", "Ctrl_Rep3", "RNase_Rep1", "RNase_Rep2", "RNase_Rep3")){
+    #iterate through all replicates
+    
+#       if (sum(MS_Table[i, grep(j, colnames(MS_Table))]) <= 0) {
+#        row_means_possible<- append(row_means_possible, i)
+#        }
+#    }
+#  }
+```
+
+
+Therefore, we remove rows 691, 3045, 3575, 4057, 5568, 6732 and 7112.
+```{r}
+# remove the rows saved in del_row_sort
+MS_Table <- MS_Table[-del_row_sort,]
+```
+
+All in all, we removed 7 rows that contained only zeros in at least one of the replicates of the two conditions (RNase or Control).
+
+## describing the structure of our data
+
+Dimension of our data frame:
+```{r}
+dim(MS_Table)
+```
+
+Some row names:
+```{r}
+head(rownames(MS_Table))
+```
+
+Some column names:
+```{r}
+head(colnames(MS_Table))
+```
+
+## normalize replicates
+
+In the first normalization step, we want to have a look at the replicates of every fraction under every condition. Theoretically, the three replicates of each fraction are equal, due to them being the results of the same experiment. However, due to experimental differences, this usually is not the case. Therefore, we normalize the replicates in order to make them comparable. To do so, we normalize every three replicates of a given fraction and condition by computing their sums and then computing the mean value of the two closest sums. The quotients of this mean sum and the three sums of the replicates will give us the normalization factors for the three replicates.
+
+
+```{r}
+for (i in seq(1, 148, by = 3)) {
+# iterate through the fractions (each fraction has 3 replicates)  
+  
+  #print(i)
+  
+  # compute the sums of every replicate
+  sums <- c(sum(MS_Table[, i]), sum(MS_Table[, i + 1]), sum(MS_Table[, i + 2]))
+  
+  # compute the mean value of the two closest sums
+  if (abs(sums[1] - sums[2]) < abs(sums[1] - sums[3]) &
+      abs(sums[1] - sums[2]) < abs(sums[2] - sums[3])) {
+    mean_sum <- mean(c(sums[1], sums[2]))
+  } else if (abs(sums[2] - sums[3]) < abs(sums[1] - sums[2]) &
+             abs(sums[2] - sums[3]) < abs(sums[1] - sums[3])) {
+    mean_sum <- mean(c(sums[2], sums[3]))
+  } else {
+    mean_sum <- mean(c(sums[1], sums[3]))
+  }
+  #print(mean_sum)
+  
+  # compute the normalization factors
+  norm_factor <- mean_sum / sums
+  #print(norm_factor)
+
+  # multiply the normalization factors with their corresponding replicate
+  MS_Table[, i] <- MS_Table[, i] * norm_factor[1]
+  MS_Table[, i + 1] <- MS_Table[, i + 1] * norm_factor[2]
+  MS_Table[, i + 2] <- MS_Table[, i + 2] * norm_factor[3]
+
+}
+```
+
+We can check whether this worked fine or not.
+
+```{r}
+counter <- 0
+
+# there is the need to use round because the numbers seem to be slightly different behind the comma
+print(sum(MS_Table[,7]), digits = 17)
+print(sum(MS_Table[,8]), digits = 17)
+
+for (i in seq(1, 148, by = 3)) {
+  if (round(sum(MS_Table[, i])) != round(sum(MS_Table[, i + 1])) &
+      round(sum(MS_Table[, i])) != round(sum(MS_Table[, i + 2]))) {
+    counter <- counter + 1
+    print(i)
+  }
+}
+counter == 0
+```
+
+
+## normalize protein amount per fraction
+
+In the second normalization step, we want to set every protein's amount within one replicate to be 100 per conditions. For example, the protein represented by row 1 has a sum over all 25 fractions of 100 in Ctrl_Rep1. To archive this, we begin with building 6 smaller data frames for every replicate of each condition.
+
+```{r}
+# create df that contains all rows of control replicate 1
+x <- grep("Ctrl_Rep1", colnames(MS_Table))
+Ctrl_Rep1 <- MS_Table[, x]
+
+# create df that contains all rows of RNase replicate 1
+y <- grep("RNase_Rep1", colnames(MS_Table))
+RNase_Rep1 <- MS_Table[, y]
+
+# create df that contains all rows of control replicate 2
+z <- grep("Ctrl_Rep2", colnames(MS_Table))
+Ctrl_Rep2 <- MS_Table[, z]
+
+# create df that contains all rows of RNase replicate 2
+a <- grep("RNase_Rep2", colnames(MS_Table))
+RNase_Rep2 <- MS_Table[, a]
+
+# create df that contains all rows of control replicate 3
+b <- grep("Ctrl_Rep3", colnames(MS_Table))
+Ctrl_Rep3 <- MS_Table[, b]
+
+# create df that contains all rows of RNase replicate 3
+c <- grep("RNase_Rep3", colnames(MS_Table))
+RNase_Rep3 <- MS_Table[, c]
+```
+
+Following, we can set each row of every replicate's data frame to have a sum of 100.
+```{r}
+# normalization step 1 of control replicate 1
+for (i in 1:nrow(Ctrl_Rep1)) {
+  x <- sum(Ctrl_Rep1[i, ]) / 100
+  Ctrl_Rep1[i, ] = Ctrl_Rep1[i, ] / x
+}
+
+# normalization step 1 of RNase replicate 1
+for (i in 1:nrow(RNase_Rep1)) {
+  x <- sum(RNase_Rep1[i, ]) / 100
+  RNase_Rep1[i, ] = RNase_Rep1[i, ] / x
+}
+
+# normalization step 1 of control replicate 2
+for (i in 1:nrow(Ctrl_Rep2)) {
+  x <- sum(Ctrl_Rep2[i, ]) / 100
+  Ctrl_Rep2[i, ] = Ctrl_Rep2[i, ] / x
+}
+
+# normalization step 1 of RNase replicate 2
+for (i in 1:nrow(RNase_Rep2)) {
+    x <- sum(RNase_Rep2[i, ]) / 100
+    RNase_Rep2[i, ] = RNase_Rep2[i, ] / x
+}
+
+# normalization step 1 of control replicate 3
+for (i in 1:nrow(Ctrl_Rep3)) {
+  x <- sum(Ctrl_Rep3[i, ]) / 100
+  Ctrl_Rep3[i, ] = Ctrl_Rep3[i, ] / x
+}
+
+# normalization step 1 of RNase replicate 3
+for (i in 1:nrow(RNase_Rep3)) {
+  x <- sum(RNase_Rep3[i, ]) / 100
+  RNase_Rep3[i, ] = RNase_Rep3[i, ] / x
+}
+```
+
+Now, we can verify if the sum of every row really equals 100. If everything went correctly, we should get 6 times TRUE!
+```{r}
+# test if the sum of each row divided by 100 is the number of rows will tell us whether the sum is 100
+sum(Ctrl_Rep1) / 100 == nrow(Ctrl_Rep1)
+sum(RNase_Rep1) / 100 == nrow(RNase_Rep1)
+sum(Ctrl_Rep2) / 100 == nrow(Ctrl_Rep2)
+sum(RNase_Rep2) / 100 == nrow(RNase_Rep2)
+sum(Ctrl_Rep3) / 100 == nrow(Ctrl_Rep3)
+sum(RNase_Rep3) / 100 == nrow(RNase_Rep3)
+```
+
+Seems like everything went fine! Now, we can combine the replicate's data frames again to make one single data frame containing all normalized data.
+
+```{r}
+df_normalized <- as.data.frame(cbind(Ctrl_Rep1, Ctrl_Rep2, Ctrl_Rep3, RNase_Rep1, RNase_Rep2, RNase_Rep3))
+dim(df_normalized) == dim(MS_Table)
+sum(df_normalized[1,]) / 6 == 100
+df_normalized_copy <- df_normalized
+```
+
+## evaluating reproducibility of our data
+
+We want to evaluate the reproducibility of our data by computing the correlation between the replicates of the two conditions for every protein. By doing it that way, we can not only evaluate similarities between the replicates of one condition, we can also sort out single proteins which data do not seem to be reproducible. (First, we create a vector for every protein containing all its values of one replicate, for every replicate and condition.) 
+
+```{r}
+tdf_normalized <- as.data.frame(t(df_normalized))
+
+# correlation between ctrl1 and ctrl2 for every protein
+c1c2 <- c()
+for (i in 1:ncol(tdf_normalized)) {
+  c1c2 <- append(c1c2, (cor(tdf_normalized[1:25, i], tdf_normalized[26:50, i])))
+}
+
+# correlation between ctrl1 and ctrl3 for every protein
+c1c3 <- c()
+for (i in 1:ncol(tdf_normalized)) {
+  c1c3 <- append(c1c3, (cor(tdf_normalized[1:25, i], tdf_normalized[51:75, i])))
+}
+ 
+# correlation between ctrl2 and ctrl3 for every protein 
+c2c3 <- c()
+for (i in 1:ncol(tdf_normalized)) {
+  c2c3 <- append(c2c3, (cor(tdf_normalized[26:50, i], tdf_normalized[51:75, i])))
+}
+
+# correlation between rnase1 and rnase2 for every protein
+r1r2 <- c()
+for (i in 1:ncol(tdf_normalized)) {
+  r1r2 <- append(r1r2, (cor(tdf_normalized[76:100, i], tdf_normalized[101:125, i])))
+}
+
+# correlation between rnase1 an rnase3 for every protein
+r1r3 <- c()
+for (i in 1:ncol(tdf_normalized)) {
+  r1r3 <- append(r1r3, (cor(tdf_normalized[76:100, i], tdf_normalized[126:150, i])))
+}
+  
+# correlation between rnase2 and rnase3 for every protein
+r2r3 <- c()
+for (i in 1:ncol(tdf_normalized)) {
+  r2r3 <- append(r2r3, (cor(tdf_normalized[101:125, i], tdf_normalized[126:150, i])))
+}
+```
+
+In order to test which threshold fits the best we try different ones, and plot how many proteins would be removed. We are testing threshold values from 0 to 0.8. Everything above would mean throwing away too many proteins, with high correlation. 
+
+```{r}
+tres_values <- c()
+
+for (t in seq(0, 0.8, by = 0.05)) {
+  tc <- c()
+  
+  for (i in 1:ncol(tdf_normalized)) {
+    if (c1c2[i] < t) {
+      tc <- append(tc, colnames(tdf_normalized)[i])
+    }
+  }
+  for (i in 1:ncol(tdf_normalized)) {
+    if (c1c3[i] < t) {
+      tc <- append(tc, colnames(tdf_normalized)[i])
+    }
+  }
+  for (i in 1:ncol(tdf_normalized)) {
+    if (c2c3[i] < t) {
+      tc <- append(tc, colnames(tdf_normalized)[i])
+    }
+  }
+  for (i in 1:ncol(tdf_normalized)) {
+    if (r1r2[i] < t) {
+      tc <- append(tc, colnames(tdf_normalized)[i])
+    }
+  }
+  for (i in 1:ncol(tdf_normalized)) {
+    if (r1r3[i] < t) {
+      tc <- append(tc, colnames(tdf_normalized)[i])
+    }
+  }
+  for (i in 1:ncol(tdf_normalized)) {
+    if (r2r3[i] < t) {
+      tc <- append(tc, colnames(tdf_normalized)[i])
+    }
+  }
+  tres_values <- append(tres_values, length(unique(tc)))
+}
+```
+
+To evaluate a fitting threshold value we are going to plot the number of proteins which would be removed against the respective threshold value. 
+
+```{r}
+plot(seq(0, 0.8, 0.05), tres_values, type = "b", xlab = "threshold value", ylab = "number of removed proteins", main = "")
+```
+Value 0.6 seems to be a good fit. We can also have a look at the correlation values we just computed by visualizing them with a plot. For example, we can have a look at the distribution:
+
+```{r}
+cor_vec <- c(c1c2, c1c3, c2c3, r1r2, r1r3, r2r3)
+hist(cor_vec)
+```
+Here it also looks like 0.6 is a good threshold value. 
+
+To visualize the analysis we just performed, we can plot two replicates which are not strongly correlated and two replicates which are strongly correlated.
+```{r}
+par(mfrow = c(1, 2))
+
+# no strong correlation
+colnames(tdf_normalized)[which(r1r3 == min(r1r3))]
+df_plot1 <-
+  data.frame(x = tdf_normalized$K2C1_HUMAN[76:100], y = tdf_normalized$K2C1_HUMAN[126:150])
+plot1 <- ggplot(df_plot1, aes(x, y)) +
+  geom_point() +
+  geom_smooth() +
+  labs(x = "K2C1_HUMAN RNase Rep1", y = "K2C1_HUMAN RNase Rep3")
+
+# strong correlation
+set.seed(124)
+x <- which(c1c2 < 0.97)
+colnames(tdf_normalized)[sample(which(c1c2[x] > 0.90), 1)]
+
+df_plot2 <-
+  data.frame(x = tdf_normalized$ECE1_HUMAN[1:25] , y = tdf_normalized$ECE1_HUMAN[26:50])
+plot2 <- ggplot(df_plot2, aes(x, y)) +
+  geom_point() +
+  geom_smooth() +
+  labs(x = "ECE1_HUMAN Ctrl Rep1", y = "ECE1_HUMAN Ctrl Rep2")
+
+# plot
+cowplot::plot_grid(plot1, plot2, labels = "AUTO")
+```
+
+Now, we must remove the proteins with correlation values below 0.6.
+
+```{r}
+t = 0.6
+tc <- c()
+
+for (i in 1:ncol(tdf_normalized)) {
+  if (c1c2[i] < t) {
+    tc <- append(tc, colnames(tdf_normalized)[i])
+  } 
+}
+for (i in 1:ncol(tdf_normalized)) {
+  if (c1c3[i] < t) {
+    tc <- append(tc, colnames(tdf_normalized)[i])
+  } 
+}
+for (i in 1:ncol(tdf_normalized)) {
+  if (c2c3[i] < t) {
+    tc <- append(tc, colnames(tdf_normalized)[i])
+  } 
+}
+for (i in 1:ncol(tdf_normalized)) {
+  if (r1r2[i] < t) {
+    tc <- append(tc, colnames(tdf_normalized)[i])
+  } 
+}
+for (i in 1:ncol(tdf_normalized)) {
+  if (r1r3[i] < t) {
+    tc <- append(tc, colnames(tdf_normalized)[i])
+  } 
+}
+for (i in 1:ncol(tdf_normalized)) {
+  if (r2r3[i] < t) {
+    tc <- append(tc, colnames(tdf_normalized)[i])
+  } 
+}
+
+length(unique(tc))
+utc <- unique(tc)
+remove_proteins <- c()
+
+for (i in 1:length(utc)) {
+  remove_proteins <- append(remove_proteins, which(rownames(df_normalized) == utc[i]))
+}
+if (length(remove_proteins) != 0) {
+  df_normalized <- df_normalized[-remove_proteins,]
+}
+dim(df_normalized)
+```
+
+Now, we have removed 25 proteins due to an expected low reproducibility. We can save this data frame as a new file **RDeeP_HeLa_Mitosis_normalized.rds**:
+
+```{r}
+saveRDS(df_normalized, file = "RDeeP_HeLa_Mitosis_normalized.rds")
+```
+
+```{r}
+df_normalized <- readRDS("RDeeP_HeLa_Mitosis_normalized.rds")
+sum(df_normalized) / 600 == nrow(df_normalized)
+```
+
+## combining replicates using mean value
+
+In this step, we want to combine the three replicates of every condition by using the mean value of the three replicates' values. To do so, we first split the `df_normalized` data frame into one data frame containing only the control replicates and one data frame containing only the RNase replicates.
+
+```{r}
+df_Ctrl <- df_normalized[, grep("Ctrl", colnames(df_normalized))]
+df_RNase <- df_normalized[, grep("RNase", colnames(df_normalized))]
+```
+
+Now, we can process the two data frames so that they contain only the mean values of the triplicates.
+
+```{r}
+# control condition
+df_Ctrl_c <- data.frame()
+for (i in 1:nrow(df_Ctrl)) {
+  for (j in 1:25) {
+    x <- mean(c(df_Ctrl[i, j], df_Ctrl[i, j + 25], df_Ctrl[i, j + 50]))
+    df_Ctrl_c[i, j] = x
+  }
+}
+
+# RNase condition
+df_RNase_c <- data.frame()
+for (i in 1:nrow(df_RNase)) {
+  for (j in 1:25) {
+    x <- mean(c(df_RNase[i, j], df_RNase[i, j + 25], df_RNase[i, j + 50]))
+    df_RNase_c[i, j] = x
+  }
+}
+```
+
+```{r}
+# test if mean values in df_Ctrl_c are computed correctly
+score1 <- 0
+for (i in 1:nrow(df_Ctrl)) {
+  for (j in 1:25) {
+    if (mean(c(df_Ctrl[i, j], df_Ctrl[i, j + 25], df_Ctrl[i, j + 50])) != df_Ctrl_c[i, j]) {
+      score1 <- score1 + 1
+    }
+  }
+}
+score1 == 0
+
+# test if mean values in df_RNase_c are computed correctly
+score2 <- 0
+for (i in 1:nrow(df_RNase)) {
+  for (j in 1:25) {
+    if (mean(c(df_RNase[i, j], df_RNase[i, j + 25], df_RNase[i, j + 50])) != df_RNase_c[i, j]) {
+      score2 <- score2 + 1
+    }
+  }
+}
+score2 == 0
+```
+
+Now both, the Ctrl and the RNase data frames, consist of the mean values of the replicates and are scaled to 100 units of each protein. We can now join the both data frames to one again, containing all proteins but only 50 instead of 150 columns.
+
+```{r}
+df_normalized_combined <- cbind(df_Ctrl_c, df_RNase_c)
+rownames(df_normalized_combined) <- rownames(df_normalized)
+
+cnc <- sapply(1:25, function(x) {paste("Fraction", x, "_Ctrl", sep = "")})
+cnr <- sapply(1:25, function(x) {paste("Fraction", x, "_RNase", sep = "")})
+colnames(df_normalized_combined)[1:25] <- cnc
+colnames(df_normalized_combined)[26:50] <- cnr
+```
+
+Lastly, we can save that data frame as a file again to avoid running the code above again and again.
+
+```{r}
+# for report
+saveRDS(tres_values, file = "tres_values.rds")
+
+saveRDS(df_normalized_combined, file = "RDeeP_HeLa_Mitosis_normalized_combined.rds")
+```
+
+
+
+
+# PART 2
+
+## load data
+ 
+```{r}
+df_normalized_combined <- readRDS("RDeeP_HeLa_Mitosis_normalized_combined.rds")
+```
+
+```{r}
+dim(df_normalized_combined)
+```
+
+## global maxima for combined values
+
+```{r}
+d <- dim(df_normalized_combined)
+rows <- d[1] 
+columns <- d[2]
+fractions_ctrl <- 25
+fractions_RNase <- 25
+
+df_global_maxima <- data.frame()
+proteins <- rownames(df_normalized_combined)
+fractionsnames <- colnames(df_normalized_combined)
+
+for (z in 1:rows) {
+  proteinname <- proteins[z]
+  
+  maxfc <- df_normalized_combined[z, 1]
+  maxfcc <- 1
+  
+  for (fc in 2:25) {
+    
+    if (maxfc < df_normalized_combined[z, fc]) {
+      maxfc <- df_normalized_combined[z, fc]
+      maxfcc <- fc
+    }
+  }
+  
+  maxrna <- df_normalized_combined[z, 26]
+  maxfcr <- 26
+  
+  for (fc in 27:50) {
+    
+    if (maxrna < df_normalized_combined[z, fc]) {
+      maxrna <- df_normalized_combined[z, fc]
+      maxfcr <- fc
+    }
+  }
+  
+  df_global_maxima <-
+    rbind(
+      df_global_maxima,
+      data.frame(
+        #global_maximum_ctrl_fraction1 = fractionsnames[maxfcc],
+        ctrl_global_maximum_fraction = maxfcc,
+        ctrl_global_maximum_value = maxfc,
+        #global_maximum_rnase_fraction1 = fractionsnames[maxfcr],
+        rnase_global_maximum_fraction = maxfcr - 25,
+        rnase_global_maximum_value = maxrna
+      )
+    )
+}
+
+rownames(df_global_maxima) <- rownames(df_normalized_combined)
+#View(df_global_maxima)
+dim(df_global_maxima)
+```
+
+```{r}
+# test whether both ways work the same, NOT IMPORTANT FOR REPORT
+ctrl_global_maximum_fraction <- c()
+ctrl_global_maximum_value <- c()
+rnase_global_maximum_fraction <- c()
+rnase_global_maximum_value <- c()
+
+for (i in 1:nrow(df_normalized_combined)) {
+  ctrl_global_maximum_value <-
+    append(ctrl_global_maximum_value, max(df_normalized_combined[i, 1:25]))
+  ctrl_global_maximum_fraction <-
+    append(ctrl_global_maximum_fraction,
+           which(df_normalized_combined[i, 1:25] == max(df_normalized_combined[i, 1:25])))
+  rnase_global_maximum_value <-
+    append(rnase_global_maximum_value, max(df_normalized_combined[i, 26:50]))
+  rnase_global_maximum_fraction <-
+    append(rnase_global_maximum_fraction,
+           which(df_normalized_combined[i, 26:50] == max(df_normalized_combined[i, 26:50])))
+  
+}
+
+df_global_maxima_test <-
+  data.frame(
+    row.names = rownames(df_normalized_combined),
+    ctrl_global_maximum_fraction = ctrl_global_maximum_fraction,
+    ctrl_global_maximum_value = ctrl_global_maximum_value,
+    rnase_global_maximum_fraction = rnase_global_maximum_fraction,
+    rnase_global_maximum_value = rnase_global_maximum_value
+  )
+
+sum(df_global_maxima != df_global_maxima_test)
+```
+
+```{r}
+saveRDS(df_global_maxima, file = "RDeeP_HeLa_Mitosis_global_maxima.rds")
+```
+
+## global maxima for every replicate
+
+In order to use the function above for every replicate, we need to split the data frame df_normalized into 6 data frames.
+
+```{r}
+df_normalized <- readRDS("RDeeP_HeLa_Mitosis_normalized.rds")
+
+df_ctrl1 <- df_normalized[,grep("Ctrl_Rep1", colnames(df_normalized))]
+df_ctrl2 <- df_normalized[,grep("Ctrl_Rep2", colnames(df_normalized))]
+df_ctrl3 <- df_normalized[,grep("Ctrl_Rep3", colnames(df_normalized))]
+df_rnase1 <- df_normalized[,grep("RNase_Rep1", colnames(df_normalized))]
+df_rnase2 <- df_normalized[,grep("RNase_Rep2", colnames(df_normalized))]
+df_rnase3 <- df_normalized[,grep("RNase_Rep3", colnames(df_normalized))]
+```
+
+```{r}
+find_global_maxima <- function(df) {
+  
+  d <- dim(df)
+  rows <- d[1]
+  columns <- d[2]
+  fractions_ctrl <- 25
+  #fractions_RNase <- 25
+  
+  df_output <- data.frame()
+  proteins <- rownames(df)
+  fractionsnames <- colnames(df)
+  
+  for (z in 1:rows) {
+    proteinname <- proteins[z]
+    
+    maxfc <- df[z, 1]
+    maxfcc <- 1
+    
+    for (fc in 2:25) {
+      if (maxfc < df[z, fc]) {
+        maxfc <- df[z, fc]
+        maxfcc <- fc
+      }
+    }
+    
+    #maxrna <- df[z, 26]
+    #maxfcr <- 26
+    
+    #for (fc in 27:50) {
+      #if (maxrna < df[z, fc]) {
+        #maxrna <- df[z, fc]
+        #maxfcr <- fc
+      #}
+    #}
+    
+    df_output <-
+      rbind(
+        df_output,
+        data.frame(
+          #global_maximum_ctrl_fraction1 = fractionsnames[maxfcc],
+          ctrl_global_maximum_fraction = maxfcc,
+          ctrl_global_maximum_value = maxfc
+          #global_maximum_rnase_fraction1 = fractionsnames[maxfcr],
+          #rnase_global_maximum_fraction = maxfcr - 25,
+          #rnase_global_maximum_value = maxrna
+        )
+      )
+  }
+  
+  rownames(df_output) <- rownames(df)
+  #View(df_global_maxima)
+  #dim(df_output)
+  
+  return(df_output)
+}
+```
+
+```{r}
+df_ctrl1_global_maxima <- find_global_maxima(df_ctrl1)
+df_ctrl2_global_maxima <- find_global_maxima(df_ctrl2)
+df_ctrl3_global_maxima <- find_global_maxima(df_ctrl3)
+df_rnase1_global_maxima <- find_global_maxima(df_rnase1)
+df_rnase2_global_maxima <- find_global_maxima(df_rnase2)
+df_rnase3_global_maxima <- find_global_maxima(df_rnase3)
+
+df_global_maxima_rep <-
+  cbind(
+    df_ctrl1_global_maxima,
+    df_ctrl2_global_maxima,
+    df_ctrl3_global_maxima,
+    df_rnase1_global_maxima,
+    df_rnase2_global_maxima,
+    df_rnase3_global_maxima
+  )
+colnames(df_global_maxima_rep) <-
+  c(
+    "ctrl1_global_maximum_fraction",
+    "ctrl1_global_maximum_value",
+    "ctrl2_global_maximum_fraction",
+    "ctrl2_global_maximum_value",
+    "ctrl3_global_maximum_fraction",
+    "ctrl3_global_maximum_value",
+    "rnase1_global_maximum_fraction",
+    "rnase1_global_maximum_value",
+    "rnase2_global_maximum_fraction",
+    "rnase2_global_maximum_value",
+    "rnase3_global_maximum_fraction",
+    "rnase3_global_maximum_value"
+  )
+```
+
+```{r}
+saveRDS(df_global_maxima_rep, file = "RDeeP_HeLa_Mitosis_global_maxima_rep.rds")
+```
+
+## local maxima 
+
+```{r}
+plot(1:25, df_normalized_combined[14, 1:25], type = "b")
+plot(1:25, df_normalized_combined[2898, 1:25], type = "b")
+plot(1:25, df_normalized_combined[2900, 1:25], type = "b")
+plot(1:25, df_normalized_combined[2901, 1:25], type = "b")
+```
+
+### local maxima ctrl
+
+```{r}
+# create df that will contain the local maxima, because we do not know yet how many local maxima each protein will have we need to make space for more than one per protein and cut the rest of later
+
+df_local_maxima_ctrl <-
+  data.frame(
+    row.names = rownames(df_normalized_combined),
+    ctrl_local_maximum1_fraction = matrix(0, nrow(df_normalized_combined), 1),
+    ctrl_local_maximum1_value = matrix(0, nrow(df_normalized_combined), 1),
+    ctrl_local_maximum2_fraction = matrix(0, nrow(df_normalized_combined), 1),
+    ctrl_local_maximum2_value = matrix(0, nrow(df_normalized_combined), 1),
+    ctrl_local_maximum3_fraction = matrix(0, nrow(df_normalized_combined), 1),
+    ctrl_local_maximum3_value = matrix(0, nrow(df_normalized_combined), 1),
+    ctrl_local_maximum4_fraction = matrix(0, nrow(df_normalized_combined), 1),
+    ctrl_local_maximum4_value = matrix(0, nrow(df_normalized_combined), 1),
+    ctrl_local_maximum5_fraction = matrix(0, nrow(df_normalized_combined), 1),
+    ctrl_local_maximum5_value = matrix(0, nrow(df_normalized_combined), 1)
+  )
+```
+
+```{r}
+for (i in 1:nrow(df_normalized_combined)) {
+  # first loop iterating through the proteins
+  over_4 <- c()
+  # store indices of values over 4 for every protein in here (only temporary)
+  
+  for (j in 1:25) {
+    # second loop iterating through all Ctrl fractions
+    if (df_normalized_combined[i, j] > 4) {
+      # only values > 4 are saved
+      over_4 <- append(over_4, j)
+    }
+  }
+  #print(over_4)
+  local_maxima <- c()
+  # store indices of values over 4 and with no higher neighbours (only temporary)
+  
+  for (v in over_4) {
+    # iterate through all values that are > 4
+    #print(df_normalized_combined[i, v])
+    
+    # values on boarders have to be treated differently
+    
+    # first value (no value to the left)
+    if (v == 1) {
+      if (df_normalized_combined[i, v] > df_normalized_combined[i, v + 1] &
+          df_normalized_combined[i, v] > df_normalized_combined[i, v + 2] &
+          df_normalized_combined[i, v] != max(df_normalized_combined[i, 1:25])) {
+        local_maxima <- append(local_maxima, v)
+      }
+      
+      # second value (only one value to the left)
+    } else if (v == 2) {
+      if (df_normalized_combined[i, v] > df_normalized_combined[i, v - 1] &
+          df_normalized_combined[i, v] > df_normalized_combined[i, v + 1] &
+          df_normalized_combined[i, v] > df_normalized_combined[i, v + 2] &
+          df_normalized_combined[i, v] != max(df_normalized_combined[i, 1:25])) {
+        local_maxima <- append(local_maxima, v)
+      }
+      
+      # 24th value (only one value to the right)
+    } else if (v == 24) {
+      if (df_normalized_combined[i, v] > df_normalized_combined[i, v - 1] &
+          df_normalized_combined[i, v] > df_normalized_combined[i, v - 2] &
+          df_normalized_combined[i, v] > df_normalized_combined[i, v + 1] &
+          df_normalized_combined[i, v] != max(df_normalized_combined[i, 1:25])) {
+        local_maxima <- append(local_maxima, v)
+      }
+      
+      # 25th value (no value to the right)
+    } else if (v == 25) {
+      if (df_normalized_combined[i, v] > df_normalized_combined[i, v - 1] &
+          df_normalized_combined[i, v] > df_normalized_combined[i, v - 2] &
+          df_normalized_combined[i, v] != max(df_normalized_combined[i, 1:25])) {
+        local_maxima <- append(local_maxima, v)
+      }
+      
+      # all other values to not have to be treated differently
+    } else {
+      if (df_normalized_combined[i, v] > df_normalized_combined[i, v - 1] &
+          df_normalized_combined[i, v] > df_normalized_combined[i, v - 2] &
+          df_normalized_combined[i, v] > df_normalized_combined[i, v + 1] &
+          df_normalized_combined[i, v] > df_normalized_combined[i, v + 2] &
+          df_normalized_combined[i, v] != max(df_normalized_combined[i, 1:25])) {
+        local_maxima <- append(local_maxima, v)
+      }
+    }
+  }
+  #print(paste("protein", as.character(i)))
+  #print(local_maxima)
+  
+  # now we need to save the protein name as well as the local maximum's position and value
+  
+  if (length(local_maxima) == 1) {
+    # proteins with one local maximum
+    
+    df_local_maxima_ctrl[i, 1] <- local_maxima[1]
+    df_local_maxima_ctrl[i, 2] <- df_normalized_combined[i, local_maxima[1]]
+    
+  } else if (length(local_maxima) == 2) {
+    # proteins with 2 local maxima
+    
+    df_local_maxima_ctrl[i, 1] <- local_maxima[1]
+    df_local_maxima_ctrl[i, 2] <- df_normalized_combined[i, local_maxima[1]]
+    df_local_maxima_ctrl[i, 3] <- local_maxima[2]
+    df_local_maxima_ctrl[i, 4] <-df_normalized_combined[i, local_maxima[2]]
+    
+  } else if (length(local_maxima) == 3) {
+    # proteins with 3 local maxima
+    
+    df_local_maxima_ctrl[i, 1] <- local_maxima[1]
+    df_local_maxima_ctrl[i, 2] <- df_normalized_combined[i, local_maxima[1]]
+    df_local_maxima_ctrl[i, 3] <- local_maxima[2]
+    df_local_maxima_ctrl[i, 4] <-df_normalized_combined[i, local_maxima[2]]
+    df_local_maxima_ctrl[i, 5] <- local_maxima[3]
+    df_local_maxima_ctrl[i, 6] <-df_normalized_combined[i, local_maxima[3]]
+    
+  } else if (length(local_maxima) == 4) {
+    # proteins that have 4 local maxima
+    
+    df_local_maxima_ctrl[i, 1] <- local_maxima[1]
+    df_local_maxima_ctrl[i, 2] <- df_normalized_combined[i, local_maxima[1]]
+    df_local_maxima_ctrl[i, 3] <- local_maxima[2]
+    df_local_maxima_ctrl[i, 4] <-df_normalized_combined[i, local_maxima[2]]
+    df_local_maxima_ctrl[i, 5] <- local_maxima[3]
+    df_local_maxima_ctrl[i, 6] <-df_normalized_combined[i, local_maxima[3]]
+    df_local_maxima_ctrl[i, 7] <- local_maxima[4]
+    df_local_maxima_ctrl[i, 8] <-df_normalized_combined[i, local_maxima[4]]
+    
+  } else if (length(local_maxima) == 5) {
+    # proteins with 5  local maxima
+    
+    df_local_maxima_ctrl[i, 1] <- local_maxima[1]
+    df_local_maxima_ctrl[i, 2] <- df_normalized_combined[i, local_maxima[1]]
+    df_local_maxima_ctrl[i, 3] <- local_maxima[2]
+    df_local_maxima_ctrl[i, 4] <-df_normalized_combined[i, local_maxima[2]]
+    df_local_maxima_ctrl[i, 5] <- local_maxima[3]
+    df_local_maxima_ctrl[i, 6] <-df_normalized_combined[i, local_maxima[3]]
+    df_local_maxima_ctrl[i, 7] <- local_maxima[4]
+    df_local_maxima_ctrl[i, 8] <-df_normalized_combined[i, local_maxima[4]]
+    df_local_maxima_ctrl[i, 9] <- local_maxima[5]
+    df_local_maxima_ctrl[i, 10] <-df_normalized_combined[i, local_maxima[5]]
+    
+  }
+}
+```
+
+### local maxima rnase
+
+```{r}
+# create df that will contain the local maxima, because we do not know yet how many local maxima each protein will have we need to make space for more than one per protein and cut the rest of later
+
+df_local_maxima_rnase <-
+  data.frame(
+    row.names = rownames(df_normalized_combined),
+    rnase_local_maximum1_fraction = matrix(0, nrow(df_normalized_combined), 1),
+    rnase_local_maximum1_value = matrix(0, nrow(df_normalized_combined), 1),
+    rnase_local_maximum2_fraction = matrix(0, nrow(df_normalized_combined), 1),
+    rnase_local_maximum2_value = matrix(0, nrow(df_normalized_combined), 1),
+    rnase_local_maximum3_fraction = matrix(0, nrow(df_normalized_combined), 1),
+    rnase_local_maximum3_value = matrix(0, nrow(df_normalized_combined), 1),
+    rnase_local_maximum4_fraction = matrix(0, nrow(df_normalized_combined), 1),
+    rnase_local_maximum4_value = matrix(0, nrow(df_normalized_combined), 1),
+    rnase_local_maximum5_fraction = matrix(0, nrow(df_normalized_combined), 1),
+    rnase_local_maximum5_value = matrix(0, nrow(df_normalized_combined), 1)
+  )
+```
+
+```{r}
+for (i in 1:nrow(df_normalized_combined)) {
+  # first loop iterating through the proteins
+  over_4 <- c()
+  # store indices of values over 4 for every protein in here (only temporary)
+  
+  for (j in 26:50) {
+    # second loop iterating through all Ctrl fractions
+    if (df_normalized_combined[i, j] > 4) {
+      # only values > 4 are saved
+      over_4 <- append(over_4, j)
+    }
+  }
+  #print(over_4)
+  local_maxima <- c()
+  # store indices of values over 4 and with no higher neighbours (only temporary)
+  
+  for (v in over_4) {
+    # iterate through all values that are > 4
+    #print(df_normalized_combined[i, v])
+    
+    # values on boarders have to be treated differently
+    
+    # 26th value (no value to the left)
+    if (v == 26) {
+      if (df_normalized_combined[i, v] > df_normalized_combined[i, v + 1] &
+          df_normalized_combined[i, v] > df_normalized_combined[i, v + 2] &
+          df_normalized_combined[i, v] != max(df_normalized_combined[i, 26:50])) {
+        local_maxima <- append(local_maxima, v)
+      }
+      
+      # 27th value (only one value to the left)
+    } else if (v == 27) {
+      if (df_normalized_combined[i, v] > df_normalized_combined[i, v - 1] &
+          df_normalized_combined[i, v] > df_normalized_combined[i, v + 1] &
+          df_normalized_combined[i, v] > df_normalized_combined[i, v + 2] &
+          df_normalized_combined[i, v] != max(df_normalized_combined[i, 26:50])) {
+        local_maxima <- append(local_maxima, v)
+      }
+      
+      # 49th value (only one value to the right)
+    } else if (v == 49) {
+      if (df_normalized_combined[i, v] > df_normalized_combined[i, v - 1] &
+          df_normalized_combined[i, v] > df_normalized_combined[i, v - 2] &
+          df_normalized_combined[i, v] > df_normalized_combined[i, v + 1] &
+          df_normalized_combined[i, v] != max(df_normalized_combined[i, 26:50])) {
+        local_maxima <- append(local_maxima, v)
+      }
+      
+      # 50th value (no value to the right)
+    } else if (v == 50) {
+      if (df_normalized_combined[i, v] > df_normalized_combined[i, v - 1] &
+          df_normalized_combined[i, v] > df_normalized_combined[i, v - 2] &
+          df_normalized_combined[i, v] != max(df_normalized_combined[i, 26:50])) {
+        local_maxima <- append(local_maxima, v)
+      }
+      
+      # all other values to not have to be treated differently
+    } else {
+      if (df_normalized_combined[i, v] > df_normalized_combined[i, v - 1] &
+          df_normalized_combined[i, v] > df_normalized_combined[i, v - 2] &
+          df_normalized_combined[i, v] > df_normalized_combined[i, v + 1] &
+          df_normalized_combined[i, v] > df_normalized_combined[i, v + 2] &
+          df_normalized_combined[i, v] != max(df_normalized_combined[i, 26:50])) {
+        local_maxima <- append(local_maxima, v)
+      }
+    }
+  }
+  #print(paste("protein", as.character(i)))
+  #print(local_maxima)
+  
+  # now we need to save the protein name as well as the local maximum's position and value
+  
+  if (length(local_maxima) == 1) {
+    # proteins with one local maximum
+    
+    df_local_maxima_rnase[i, 1] <- local_maxima[1] - 25
+    df_local_maxima_rnase[i, 2] <- df_normalized_combined[i, local_maxima[1]]
+    
+  } else if (length(local_maxima) == 2) {
+    # proteins with 2 local maxima
+    
+    df_local_maxima_rnase[i, 1] <- local_maxima[1] - 25
+    df_local_maxima_rnase[i, 2] <- df_normalized_combined[i, local_maxima[1]]
+    df_local_maxima_rnase[i, 3] <- local_maxima[2] - 25
+    df_local_maxima_rnase[i, 4] <-df_normalized_combined[i, local_maxima[2]]
+    
+  } else if (length(local_maxima) == 3) {
+    # proteins with 3 local maxima
+    
+    df_local_maxima_rnase[i, 1] <- local_maxima[1] - 25
+    df_local_maxima_rnase[i, 2] <- df_normalized_combined[i, local_maxima[1]]
+    df_local_maxima_rnase[i, 3] <- local_maxima[2] - 25
+    df_local_maxima_rnase[i, 4] <-df_normalized_combined[i, local_maxima[2]]
+    df_local_maxima_rnase[i, 5] <- local_maxima[3] - 25
+    df_local_maxima_rnase[i, 6] <-df_normalized_combined[i, local_maxima[3]]
+    
+  } else if (length(local_maxima) == 4) {
+    # proteins that have 4 local maxima
+    
+    df_local_maxima_rnase[i, 1] <- local_maxima[1] - 25
+    df_local_maxima_rnase[i, 2] <- df_normalized_combined[i, local_maxima[1]]
+    df_local_maxima_rnase[i, 3] <- local_maxima[2] - 25
+    df_local_maxima_rnase[i, 4] <-df_normalized_combined[i, local_maxima[2]]
+    df_local_maxima_rnase[i, 5] <- local_maxima[3] - 25
+    df_local_maxima_rnase[i, 6] <-df_normalized_combined[i, local_maxima[3]]
+    df_local_maxima_rnase[i, 7] <- local_maxima[4] - 25
+    df_local_maxima_rnase[i, 8] <-df_normalized_combined[i, local_maxima[4]]
+    
+  } else if (length(local_maxima) == 5) {
+    # proteins with 5  local maxima
+    
+    df_local_maxima_rnase[i, 1] <- local_maxima[1] - 25
+    df_local_maxima_rnase[i, 2] <- df_normalized_combined[i, local_maxima[1]]
+    df_local_maxima_rnase[i, 3] <- local_maxima[2] - 25
+    df_local_maxima_rnase[i, 4] <-df_normalized_combined[i, local_maxima[2]]
+    df_local_maxima_rnase[i, 5] <- local_maxima[3] - 25
+    df_local_maxima_rnase[i, 6] <-df_normalized_combined[i, local_maxima[3]]
+    df_local_maxima_rnase[i, 7] <- local_maxima[4] - 25
+    df_local_maxima_rnase[i, 8] <-df_normalized_combined[i, local_maxima[4]]
+    df_local_maxima_rnase[i, 9] <- local_maxima[5] - 25
+    df_local_maxima_rnase[i, 10] <-df_normalized_combined[i, local_maxima[5]]
+    
+  }
+}
+```
+
+### combine and save local maxima
+
+```{r}
+df_local_maxima <- as.data.frame(cbind(df_local_maxima_ctrl, df_local_maxima_rnase))
+rownames(df_local_maxima) <- rownames(df_normalized_combined)
+```
+
+```{r}
+saveRDS(df_local_maxima, file = "RDeeP_HeLa_Mitosis_local_maxima.rds")
+```
+
+
+
+
+# PART 3
+
+## load data
+
+```{r}
+df_normalized <- readRDS("RDeeP_HeLa_Mitosis_normalized.rds")
+df_normalized_combined <- readRDS("RDeeP_HeLa_Mitosis_normalized_combined.rds")
+df_global_maxima <- readRDS("RDeeP_HeLa_Mitosis_global_maxima.rds")
+df_global_maxima_rep <- readRDS("RDeeP_HeLa_Mitosis_global_maxima_rep.rds")
+```
+
+## shift of global maxima > n fractions
+
+After we found the global maxima for every protein, we can continue to use this information to identify RDeeP in our data. For now, we are only using the global maxima, local maxima are found too and might be used later as well.
+
+The first selection criteria for RDeeP is that the shift of the global maximum between RNase and Ctrl conditions must be greater than n fractions (n could be 1, 2, 3,...). To find out a good value for n, we will do the analysis for multiple values and check the quality of the results. For this analysis step, we are going to use the combined data (only one replicate).
+
+We will start to write a function which gives us the shift in fractions for every protein examined.
+
+```{r}
+# create vector that will contain the shift in fractions for every protein
+shift_global <- c()
+
+# iterate through every protein and calculate how large the shift is
+for (i in 1:nrow(df_global_maxima)) {
+  
+  x <- df_global_maxima[i, 3] - df_global_maxima[i, 1]
+  shift_global <- append(shift_global, x)
+  
+}
+
+# now we can see the shift for every protein
+names(shift_global) <- rownames(df_global_maxima)
+```
+
+By doing it that way, negative numbers indicate left shifts (shift to lower fractions), while positive numbers indicate right shifts (shift to higher fractions).
+
+```{r}
+sum(shift_global < 0) # left shift
+sum(shift_global > 0) # right shift 
+sum(shift_global == 0) # no shift
+```
+
+As we can see, only relying on the global maxima, 5008 proteins do not shift, 1409 proteins have a left shift and 710 proteins have a right shift. Now, we need to select how great the left or right shift must be to make a protein a RDeeP-candidate.
+
+```{r}
+for (n in 0:5) {
+  
+  x <- length(which(shift_global < -n))
+  y <- length(which(shift_global > n))
+  z <- length(shift_global) - (x + y)
+  
+  print(x)
+  print(y)
+  print(z)
+  
+  print("")
+}
+```
+
+As expected, the greater we set n to be, the less shifting proteins we identify. Moreover, the number of proteins with no shift increases less every time we increase n by 1. Therefore, the by far greatest decrease of the number of shifting proteins is given when increasing n from 0 to 1. It is clear that a shift of only one fraction can happen in this experiment without the need of a RDeeP, so setting n to be 0 does not make sense. Setting it to 1, 2 or 3 clearly makes a difference, but a much smaller than when increasing n from 0 to 1. 
+
+Anyway, that does not really help us choosing the right value for n. 
+
+n = 1
+```{r}
+n = 1 # shift must be greater than n
+shift_proteins <- c() # in here, the proteins which are shifting are saved
+shift_proteins_index <- c()
+counter <- 0
+
+for (i in 1:nrow(df_global_maxima)) {
+  
+  if (shift_global[i] < -n) {
+    shift_proteins <- append(shift_proteins, rownames(df_global_maxima)[i])
+    shift_proteins_index <- append(shift_proteins_index, i)
+  } else if (shift_global[i] > n) {
+    shift_proteins <- append(shift_proteins, rownames(df_global_maxima)[i])
+    shift_proteins_index <- append(shift_proteins_index, i)
+  } else if (shift_global[i] < -n | shift_global[i] > n) {
+    counter <- counter + 1
+  } 
+}
+
+counter # must be zero
+length(shift_proteins) # shift proteins gives us the names of the proteins which shift more than 1 fraction
+length(shift_proteins_index) # shift proteins index gives us the indices of the shifting proteins
+```
+
+Tested and verified!
+```{r}
+df_test <- df_global_maxima[-shift_proteins_index, ]
+shift_global_test <- c()
+
+for (i in 1:nrow(df_test)) {
+  x <- df_test[i, 3] - df_test[i, 1]
+  shift_global_test <- append(shift_global_test, x)
+}
+which(shift_global_test > 1)
+which(shift_global_test < -1)
+```
+
+## significant difference of protein amount at the global maximum (combined)
+
+The second criteria a protein must meet concerns the protein amount. Next to having a great enough shift, we want RDeePs to differ significantly in protein amount between RNase and Ctrl condition at the global maxima (we are using the Ctrl maxima). To test this aspect, we are going to use a student's t-test. The fraction which we test will be given by the combined data, so that we only have one global maxima for each protein. The t-test, however, will be performed using the normalized but not combined data to have three sample for every protein and condition.
+The data frame df_global_maxima will give us the fraction we need. The protein amount is saved in df_normalized.
+
+```{r}
+pval <- c()
+
+for (i in 1:nrow(df_global_maxima)) {
+  
+  fraction <- df_global_maxima[i, 1]
+  ctrl_vec <- df_normalized[i, c(fraction, fraction + 25, fraction + 50)]
+  rnase_vec <- df_normalized[i, c(fraction + 75, fraction + 100, fraction + 125)]
+  
+  if (abs(sum(ctrl_vec)) > 299.99 & abs(sum(rnase_vec) > 299.99)) {
+    pval <- append(pval, 1)
+  } else {
+    x <- t.test(ctrl_vec, rnase_vec)
+    pval <- append(pval, x$p.value)
+  }
+}
+
+pval_adjust <- p.adjust(pval, method = "fdr")
+pval_low <- which(pval_adjust < 0.05)
+sig_dif_proteins <- rownames(df_global_maxima)[pval_low]
+sig_dif_proteins_index <- pval_low
+
+length(sig_dif_proteins) # names of proteins with significant t test (combined values)
+length(sig_dif_proteins_index) # index of proteins with significant t test (combined values)
+```
+
+## significant difference of protein amount at the global maximum (replicates)
+
+```{r}
+pval_rep <- c()
+
+for (i in 1:nrow(df_global_maxima_rep)) {
+  
+  ctrl_vec <-
+    c(df_normalized[i, df_global_maxima_rep[i, 1]],
+      df_normalized[i, df_global_maxima_rep[i, 3] + 25],
+      df_normalized[i, df_global_maxima_rep[i, 5] + 50])
+  rnase_vec <-
+    c(df_normalized[i, df_global_maxima_rep[i, 1] + 75],
+      df_normalized[i, df_global_maxima_rep[i, 3] + 100],
+      df_normalized[i, df_global_maxima_rep[i, 5] + 125])
+  
+  if (abs(sum(ctrl_vec)) > 299.99 & abs(sum(rnase_vec) > 299.99)) {
+    pval_rep <- append(pval_rep, 1)
+  } else {
+    x <- t.test(ctrl_vec, rnase_vec)
+    pval_rep <- append(pval_rep, x$p.value)
+  }
+}
+
+pval_adjust_rep <- p.adjust(pval_rep, method = "fdr")
+pval_low_rep <- which(pval_adjust_rep < 0.05)
+sig_dif_proteins_rep <- rownames(df_normalized)[pval_low_rep]
+sig_dif_proteins_index_rep <- pval_low_rep
+
+length(sig_dif_proteins_rep) # names of proteins with significant t test (replicate values)
+length(sig_dif_proteins_index_rep) # index of proteins with significant t test (replicate values)
+```
+
+## RNA-dependent proteins
+
+```{r}
+# combined values
+rdeep <- c(intersect(sig_dif_proteins, shift_proteins))
+rdeep_index <- c(intersect(sig_dif_proteins_index, shift_proteins_index))
+
+length(rdeep)
+length(rdeep_index)
+
+# replicates
+rdeep_rep <- c(intersect(sig_dif_proteins_rep, shift_proteins))
+rdeep_index_rep <- c(intersect(sig_dif_proteins_index_rep, shift_proteins_index))
+
+length(rdeep_rep)
+length(rdeep_index_rep)
+```
+
+```{r}
+# test whether everything went fine
+
+sum(rownames(df_normalized)[rdeep_index] != rdeep)
+sum(rownames(df_normalized)[rdeep_index_rep] != rdeep_rep)
+```
+
+```{r}
+df_rdeep <- data.frame(row.names = rdeep_rep, index = rdeep_index_rep)
+saveRDS(df_rdeep, file = "RDeeP_HeLa_Mitosis_rdeep.rds")
+```
+
+
+
+
+Edit: Maybe we can also define proteins as RDeeP if their shift is great enough, even if the t-test is not significant (e.g. shift > 8)
+
+```{r}
+length(which(shift_global > 8))
+x <- which(shift_global > 8)
+names(shift_global)[x]
+```
+
+
+
+
+
+
+# PART 4
+
+## Dimension Reduction
+
+Load the normalized and combined data:
+```{r}
+df_normalized_combined <- readRDS("RDeeP_HeLa_Mitosis_normalized_combined.rds")
+df_normalized <- readRDS("RDeeP_HeLa_Mitosis_normalized.rds")
+```
+
+Perform pca and umap or only umap or only pca on our data:
+```{r}
+df <- df_normalized_combined # we can use this variable to easily switch between combined and not combined
+  
+# df_umap1: pca and umap
+pca <- prcomp(df)
+df_umap1 <- as.data.frame(umap(pca$x))
+
+# df_umap2 : only umap
+df_umap2 <- as.data.frame(umap(df))
+
+# df_pca: only pca
+df_pca <- as.data.frame(prcomp(df)$x)
+```
+
+Plot the results to see whether they differ or not:
+```{r}
+ggplot(df_umap1, aes(x = V1, y = V2)) +
+  geom_point()
+
+ggplot(df_umap2, aes(x = V1, y = V2)) +
+  geom_point()
+
+ggplot(df_pca, aes(x = PC1, y = PC2)) +
+  geom_point()
+```
+
+Now, we can colour proteins according to their shifting behaviour.
+```{r}
+n = 1
+df_umap <- cbind(df_umap1, matrix(0, nrow(df_normalized_combined), 1))
+colnames(df_umap) <- c("V1", "V2", "shift")
+
+for (i in 1:nrow(df_umap)) {
+  if (shift_global[i] < -n) {
+    df_umap[i, 3] <- "left shift"
+  } else if (shift_global[i] > n) {
+    df_umap[i, 3] <- "right shift"
+  } else {
+    df_umap[i, 3] <- "no shift"
+  }
+}
+```
+
+We can also colour proteins according to our results (non-RDeep or RDeeP).
+```{r}
+for (i in 1:nrow(df_umap)) {
+  if (rownames(df_umap)[i] %in% rownames(df_rdeep)) {
+    df_umap$rdeep[i] <- "rdeep"
+  } else {
+    df_umap$rdeep[i] <- "non rdeep"
+  }
+}
+```
+
+```{r}
+alpha <- ifelse(df_umap$shift == "no shift", 0.1, 1)
+
+ggplot(df_umap, aes(x = V1, y = V2, color = shift)) +
+  geom_point(alpha = alpha) +
+  ggtitle("UMAP of normalized and combined data")
+```
+
+```{r}
+ggplot(df_umap, aes(x = V1, y = V2, color = rdeep)) +
+  geom_point() +
+  ggtitle("UMAP of normalized and combined data")
+```
+
+```{r}
+x <- grep("left", df_umap$shift)
+y <- grep("right", df_umap$shift)
+z <- c(x, y)
+
+df_umap_shift <- df_umap[z, ]
+df_umap_no_shift <- df_umap[-z, ]
+
+ggplot(df_umap_shift, aes(x = V1, y = V2, color = shift)) +
+  geom_point()
+ggplot(df_umap_no_shift, aes(x = V1, y = V2, color = shift)) +
+  geom_point()
+```
+
+```{r}
+n = 1
+df_pca_shift <- cbind(df_pca, matrix(0, nrow(df_normalized_combined), 1))
+colnames(df_pca_shift)[51] <- "shift"
+
+for (i in 1:nrow(df_pca_shift)) {
+  if (shift_global[i] < -n) {
+    df_pca_shift[i, 51] <- "left shift"
+  } else if (shift_global[i] > n) {
+    df_pca_shift[i, 51] <- "right shift"
+  } else {
+    df_pca_shift[i, 51] <- "no shift"
+  }
+  
+}
+```
+
+```{r}
+ggplot(df_pca_shift, aes(x = PC1, y = PC2, color = shift)) +
+  geom_point()
+```
+
+
+## group proteins according to their shifting behaviour
+
+```{r}
+df_global_maxima <- readRDS("RDeeP_HeLa_Mitosis_global_maxima.rds")
+```
+
+```{r}
+n = 1
+df_global_maxima_shift <- cbind(df_global_maxima, matrix(0, nrow(df_normalized_combined), 1))
+colnames(df_global_maxima_shift)[5] <- "shift"
+
+for (i in 1:nrow(df_global_maxima_shift)) {
+  if (shift_global[i] < -n) {
+    df_global_maxima_shift[i, 5] <- "left shift"
+  } else if (shift_global[i] > n) {
+    df_global_maxima_shift[i, 5] <- "right shift"
+  } else {
+    df_global_maxima_shift[i, 5] <- "no shift"
+  }
+  
+}
+```
+
+```{r}
+ggplot(
+  df_global_maxima_shift,
+  aes(y = ctrl_global_maximum_fraction, x = rnase_global_maximum_fraction, color = shift)) +
+  geom_count() +
+  ggtitle("shifting behaviour of proteins") +
+  xlab("global maximum RNase condition") + ylab("global maximum Ctrl conditions")
+```
+
+```{r}
+ggplot(
+  df_global_maxima_shift,
+  aes(y = ctrl_global_maximum_fraction, x = rnase_global_maximum_fraction, color = shift)) +
+  geom_jitter() +
+  ggtitle("shifting behaviour of proteins") +
+  xlab("global maximum RNase condition") + ylab("global maximum Ctrl conditions")
+```
+
+## kmeans with protein amount
+
+```{r}
+df_cluster <- as.data.frame(cbind(shift_global, pval_adjust_rep))
+rownames(df_cluster) <- rownames(df_normalized)
+
+for (i in 1:nrow(df_cluster)) {
+  if (rownames(df_cluster)[i] %in% rownames(df_rdeep)) {
+    df_cluster$rdeep[i] <- "rdeep"
+  } else {
+    df_cluster$rdeep[i] <- "non rdeep"
+  }
+}
+
+df_cluster$ctrl_maximum <- df_global_maxima$ctrl_global_maximum_fraction
+df_cluster$rnase_maximum <- df_global_maxima$rnase_global_maximum_fraction
+```
+
+```{r}
+wss = sapply(2:10, function(x) { 
+  kmeans(df_normalized_combined, centers = x, nstart = 100)$tot.withinss
+})
+plot(2:10, wss, xlab = "numbers of centers", ylab = "total within-cluster sum of squares", type = "b")
+```
+
+```{r}
+tdf_normalized_combined <- t(df_normalized_combined)
+km <- kmeans(df_normalized_combined, centers = 3, nstart = 100)
+
+fviz_cluster(km, data = df_normalized_combined,
+             #palette = c("#2E9FDF", "#00AFBB", "#E7B800"), 
+             geom = "point",
+             ellipse.type = "convex", 
+             ggtheme = theme_bw()
+             )
+```
+
+
+```{r}
+df_cluster$cluster <- as.character(km$cluster)
+
+ggplot(
+  df_cluster,
+  aes(y = ctrl_maximum, x = rnase_maximum, color = cluster)) +
+  geom_count() +
+  ggtitle("shifting behaviour of proteins") +
+  xlab("global maximum RNase condition") + ylab("global maximum Ctrl conditions")
+```
+
+```{r}
+df_umap$cluster <- as.character(km$cluster)
+
+ggplot(df_umap, aes(x = V1, y = V2, color = cluster)) +
+  geom_point() +
+  ggtitle("UMAP of normalized and combined data")
+```
+
+## kmeans with shift
+
+```{r}
+km2 <- kmeans(df_cluster[,1], centers = 3)
+```
+
+```{r}
+df_umap$cluster2 <- as.character(km2$cluster)
+
+ggplot(df_umap, aes(x = V1, y = V2, color = cluster2)) +
+  geom_point() +
+  ggtitle("UMAP of normalized and combined data")
+```
+
+```{r}
+wss = sapply(2:10, function(x) { 
+  kmeans(df_cluster[,1], centers = x, nstart = 100)$tot.withinss
+})
+plot(2:10, wss, xlab = "numbers of centers", ylab = "total within-cluster sum of squares", type = "b")
+```
+
+## more stuff
+
+```{r}
+ggplot(df_cluster, aes(x = abs(shift_global), y = pval_adjust_rep, color = rdeep)) +
+  geom_count()
+```
+
+
+
+
+
+
+# PART 5 
+
+## predict shift with correlation
+
+load data:
+```{r}
+df_normalized <- readRDS("RDeeP_HeLa_Mitosis_normalized.rds")
+df_normalized_combined <- readRDS("RDeeP_HeLa_Mitosis_normalized_combined.rds")
+```
+
+RDeePs should have a lower correlation between RNase und Ctrl conditions than non-RDeePs:
+```{r}
+tdf <- as.data.frame(t(df_normalized_combined))
+cor(tdf$EED_HUMAN[1:25], tdf$EED_HUMAN[26:50])  # RDeeP
+cor(tdf$`1433B_HUMAN`[1:25], tdf$`1433B_HUMAN`[26:50]) # non-RDeeP
+```
+
+Using this, we can try to make a linear regression model.
+```{r}
+# create df that will contain important information for linear modelling
+df_lm <- data.frame(row.names = colnames(tdf))
+
+# add vector containing correlation between rnase and control condition to df
+vec_cor <- apply(tdf, 2, function(x) {
+  cor(x[1:25], x[26:50])
+})
+df_lm$correlation <- vec_cor
+df_lm$shift <- shift_global
+```
+
+To train and test our model with our data, we split it so that 80% of the will train the model and 20% will test it.
+```{r}
+x <- round(nrow(df_lm) * 0.8)
+y <- x + 1
+df_lm_train <- df_lm[1:x, ]
+df_lm_test <- df_lm[y:nrow(df_lm), ]
+```
+
+Now, we can train the model using df_lm_train.
+```{r}
+linear_model <- lm(shift ~ correlation, data = df_lm_train)
+summary(linear_model)
+```
+
+We can now check some things to decide whether this model is valid or not (residuals normally distributed, residuals not correlated to explanatory variable).
+```{r}
+# normal distribution of residuals? 
+hist(linear_model$residuals, breaks = 20)
+
+qqnorm(linear_model$residuals)
+qqline(linear_model$residuals)
+
+## correlation residuals x-values? 
+cor(df_lm_train$correlation, linear_model$residuals)
+plot(df_lm_train$correlation, linear_model$residuals, pch = 20)
+```
+The residuals seem to be quite normally distributed with mean = 0. They also seem to be not correlated at all with the explanatory variable (correlation between Ctrl and RNase conditions).
+
+After we have trained our model and verified its accuracy, we can test it by using df_lm_test.
+```{r}
+pm <- predict.lm(linear_model, newdata = df_lm_test, se.fit = TRUE, interval = "confidence")
+
+df_lm_predict <- as.data.frame(cbind(df_lm_test$shift, pm$fit))
+```
+
+```{r}
+plot(
+  df_lm_predict$V1,
+  df_lm_predict$fit,
+  pch = 20,
+  col = 'blue',
+  xlab = 'Real values',
+  ylab = 'Predicted values'
+); abline(0, 1, col = "blue", lwd = 5)
+```
+!!! Model describes left shift very good, but right shifts not !!!
+
+We can also try to evaluate how accurate our model is by having a look at the confidence intervals.
+```{r}
+counter <- 0
+
+for (i in 1:nrow(df_lm_predict)) {
+  if (df_lm_predict$V1[i] > df_lm_predict$lwr[i] & df_lm_predict$V1[i] < df_lm_predict$upr[i]) {
+    counter <- counter + 1
+  }
+}
+
+counter / nrow(df_lm_predict) * 100  
+```
+
+Only 6% of the real shifts are in between the boarders of the confidence interval...
+We can also have a look at the standard errors for every prediction.
+```{r}
+mean(pm$se.fit)
+```
+
+
+## same model but absolut shift values
+
+```{r}
+# df for model training
+df_lm_train_ab <- df_lm_train
+df_lm_train_ab$shift <- abs(df_lm_train_ab$shift)
+
+# df for model testing
+df_lm_test_ab <- df_lm_test
+df_lm_test_ab$shift <- abs(df_lm_test_ab$shift)
+```
+
+```{r}
+linear_model_ab <- lm(shift ~ correlation, data = df_lm_train_ab)
+summary(linear_model_ab)
+```
+
+```{r}
+# normal distribution of residuals? 
+hist(linear_model_ab$residuals, breaks = 20)
+
+qqnorm(linear_model_ab$residuals)
+qqline(linear_model_ab$residuals)
+
+## correlation residuals x-values? 
+cor(df_lm_train_ab$correlation, linear_model_ab$residuals)
+plot(df_lm_train_ab$correlation, linear_model_ab$residuals, pch = 20)
+```
+
+```{r}
+pm_ab <- predict.lm(linear_model_ab, newdata = df_lm_test_ab, se.fit = TRUE, interval = "confidence")
+
+df_lm_predict_ab <- as.data.frame(cbind(df_lm_test_ab$shift, pm_ab$fit))
+```
+
+```{r}
+plot(
+  df_lm_predict_ab$V1,
+  df_lm_predict_ab$fit,
+  pch = 20,
+  col = 'blue',
+  xlab = 'Real values',
+  ylab = 'Predicted values'
+); abline(0, 1, col = "blue", lwd = 5)
+```
+
+```{r}
+counter <- 0
+
+for (i in 1:nrow(df_lm_predict_ab)) {
+  if (df_lm_predict_ab$V1[i] > df_lm_predict_ab$lwr[i] & df_lm_predict_ab$V1[i] < df_lm_predict_ab$upr[i]) {
+    counter <- counter + 1
+  }
+}
+
+counter / nrow(df_lm_predict_ab) * 100  
+```
+
+```{r}
+mean(pm_ab$se.fit)
+```
+
+## comparison with local maxima
+
+To have a look at the local maxima as well, we are going to calculate a global profile for every protein's local maxima by computing the squared sums of the maxima's fractions for both conditions. Later, we can use this information to compare the results with our RDeePs in order to see whether leaving out the local maxima was making our results less accurate.
+
+```{r}
+df_local_maxima <- readRDS("RDeeP_HeLa_Mitosis_local_maxima.rds")
+```
+
+```{r}
+# compute squared sums of fractions for both conditions
+
+df_local_maxima_qs <-
+  data.frame(row.names = rownames(df_local_maxima))
+
+for (i in 1:nrow(df_local_maxima_qs)) {
+  df_local_maxima_qs$ctrl[i] <-
+    sqrt(
+      df_local_maxima$ctrl_local_maximum1_fraction[i] ** 2 + df_local_maxima$ctrl_local_maximum2_fraction[i] ** 2 +   df_local_maxima$ctrl_local_maximum3_fraction[i] ** 2 + df_local_maxima$ctrl_local_maximum4_fraction[i] ** 2 +     df_local_maxima$ctrl_local_maximum5_fraction[i] ** 2
+    )
+  
+  df_local_maxima_qs$rnase[i] <-
+    sqrt(
+      df_local_maxima$rnase_local_maximum1_fraction[i] ** 2 + df_local_maxima$rnase_local_maximum2_fraction[i] ** 2 +   df_local_maxima$rnase_local_maximum3_fraction[i] ** 2 + df_local_maxima$rnase_local_maximum4_fraction[i] ** 2 +   df_local_maxima$rnase_local_maximum5_fraction[i] ** 2
+    )
+}
+```
+
+```{r}
+# add difference to data frame (absolute difference)
+
+df_local_maxima_qs$dif <- abs(df_local_maxima_qs$ctrl - df_local_maxima_qs$rnase)
+shift_proteins_l <- c(rownames(df_local_maxima_qs)[which(df_local_maxima_qs$dif > 5)])
+length(shift_proteins_l)
+```
+
+```{r}
+# RDeePs if global and local
+
+shift_proteins_lg <- c(intersect(shift_proteins, shift_proteins_l))
+length(c(intersect(shift_proteins_lg, sig_dif_proteins_rep)))
+```
+
+```{r}
+# RDeePs if global or local
+
+x1 <- c(intersect(shift_proteins, sig_dif_proteins_rep))
+x2 <- c(intersect(shift_proteins_l, sig_dif_proteins_rep))
+
+x3 <- c(x1, x2)
+length(unique(x3))
+```
+
+
+## comparison with data bases
+
+```{r}
+df_rdeep <- readRDS("RDeeP_HeLa_Mitosis_rdeep.rds")
+
+rdeep <- rownames(df_rdeep)
+non_rdeep <- rownames(df_normalized)[-df_rdeep$index]
+```
+
+```{r}
+counter <- 0
+
+for (i in rdeep) {
+  if (i %in% HS_RBPs$Entry_Name.x) {
+    counter <- counter + 1
+  }
+}
+counter
+```
+
+```{r}
+counter <- 0
+
+for (i in rdeep) {
+  if (i %in% HS_non_RBPs$Entry_Name.x) {
+    counter <- counter + 1
+  }
+}
+counter
+```
+
+```{r}
+counter <- 0
+
+for (i in non_rdeep) {
+  if (i %in% HS_RBPs$Entry_Name.x) {
+    counter <- counter + 1
+  }
+}
+counter
+```
+
+```{r}
+counter <- 0
+
+for (i in non_rdeep) {
+  if (i %in% HS_non_RBPs$Entry_Name.x) {
+    counter <- counter + 1
+  }
+}
+counter
+```
