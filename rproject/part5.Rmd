@@ -221,3 +221,65 @@ length(unique(x3))
 ```
 
 
+## comparison with data bases
+
+```{r}
+df_rdeep <- readRDS("RDeeP_HeLa_Mitosis_rdeep.rds")
+
+rdeep <- rownames(df_rdeep)
+non_rdeep <- rownames(df_normalized)[-df_rdeep$index]
+```
+
+```{r}
+counter <- 0
+
+for (i in rdeep) {
+  if (i %in% HS_RBPs$Entry_Name.x) {
+    counter <- counter + 1
+  }
+}
+counter
+```
+
+```{r}
+counter <- 0
+
+for (i in rdeep) {
+  if (i %in% HS_non_RBPs$Entry_Name.x) {
+    counter <- counter + 1
+  }
+}
+counter
+```
+
+```{r}
+counter <- 0
+
+for (i in non_rdeep) {
+  if (i %in% HS_RBPs$Entry_Name.x) {
+    counter <- counter + 1
+  }
+}
+counter
+```
+
+```{r}
+counter <- 0
+
+for (i in non_rdeep) {
+  if (i %in% HS_non_RBPs$Entry_Name.x) {
+    counter <- counter + 1
+  }
+}
+counter
+```
+
+
+
+
+
+
+
+
+
+
