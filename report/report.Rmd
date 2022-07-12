@@ -12,7 +12,6 @@ bibliography: references.bib
 csl: citationstyle.csl
 
 ---
-\begin{document}
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
@@ -99,7 +98,7 @@ Significance of difference in protein amount was tested using a Student's t-test
 
 ## **2.3 Performing Dimension Reduction Analysis**
 In this step of our analysis, we looked at a data set that, for a given protein, combine all three replicates of a given condition using the mean value method, meaning that each protein can be characterized by fifty values - 25 mean protein amount values from control and 25 mean protein amount values from RNase.Thus, each protein from our data set can be depicted as a point in a fifty-dimensional space. Here, in order to identify directions in the data corresponding to biological effects, we sought to transform our data from this high-dimensional space into a lower-dimensional space with fewer relevant variables while retaining as much variance in our data as possible. For this purpose, we performed principal component analysis (PCA) on our data set using the function `prcomp`, followed by Uniform Manifold Approximation and Projection (UMAP) analysis using the function `umap`. 
-Subsequently, we colored proteins according to their shifting behavior, differentiating between left shifting, right shifting and not shifting proteins. Left shifting proteins were defined as proteins whose maximum shifted towards smaller fractions between control and RNase condition as determined in part 2.2, i. e. proteins whose real shift in position of the global maximum is negative. Similarly, right shifting proteins showed a shift in position of the global maximum towards higher fractions, and not shifting proteins a real shift of zero.
+Subsequently, we colored proteins according to their shifting behavior, differentiating between left shifting, right shifting and not shifting proteins. Left shifting proteins were defined as proteins whose maximum shifted towards smaller fractions between control and RNase condition as determined in part 2.2, i. e. proteins whose real shift in position of the global maximum was negative. Similarly, right shifting proteins showed a shift in position of the global maximum towards higher fractions, and not shifting proteins a real shift of zero.
 
 ## **2.4 Developing a Linear Regression Model**
 Last, we sought to develop a linear regression model that features variables from our previous analysis steps. Here, we tried to predict the absolute and real shift in position of the global maximum using the correlation between the mean protein amount values between control and RNase for each given protein. This approach is based on the rationale that proteins with 
@@ -114,6 +113,13 @@ Last, we sought to develop a linear regression model that features variables fro
 
 ## **3.1 RNA-dependent proteins**
 According to aforementioned methods and criteria, we computed the RNA-dependence status for all 7127 still included in our data set and identified a total of 657 as RNA-dependent, which amounts to around 9.2% of all proteins tested.
+
+## **3.2 Performing Dimension Reduction Analysis**
+
+
+
+
+
 
 \newpage
 
