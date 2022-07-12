@@ -202,6 +202,15 @@ for (i in 1:nrow(df_normalized_combined)) {
   df_lm$dif[i] <- s
   
 }
+
+df_lm$rdeep <- df_umap$rdeep
+for (i in 1:nrow(df_lm)) {
+  if (df_lm$rdeep[i] == "rdeep") {
+    df_lm$rdeep2[i] <- 1
+  } else {
+    df_lm$rdeep2[i] <- 0
+  }
+}
 ```
 
 ```{r}
@@ -215,7 +224,7 @@ df_lm_test <- df_lm[!x, ]
 
 ```{r}
 # train linear model
-linear_model <- lm(ab_shift ~ dif + correlation, data = df_lm_train)
+linear_model <- lm(ab_shift ~ correlation + dif, data = df_lm_train)
 summary(linear_model)
 ```
 
