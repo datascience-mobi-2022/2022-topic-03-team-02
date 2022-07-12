@@ -327,7 +327,7 @@ for (t in seq(0, 0.8, by = 0.05)) {
 To evaluate a fitting threshold value we are going to plot the number of proteins which would be removed against the respective threshold value. 
 
 ```{r}
-plot(seq(0, 0.8, 0.05), tres_values, type = "b", xlab = "Threshold value", ylab = "Number of removed proteins", main = "Evaluating the reproducibility of our data")
+plot(seq(0, 0.8, 0.05), tres_values, type = "b", xlab = "Threshold value", ylab = "Number of removed proteins", main = "Evaluating the reproducibility of our data"); abline(v = 0.6, col = "red", lwd = 1, lty = 2)
 ```
 Value 0.6 seems to be a good fit. We can also have a look at the correlation values we just computed by visualizing them with a plot. For example, we can have a look at the distribution:
 
