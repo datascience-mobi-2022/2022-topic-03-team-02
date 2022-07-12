@@ -39,12 +39,13 @@ df_lm$correlation <- vec_cor
 df_lm$shift <- shift_global
 ```
 
-To train and test our model with our data, we split it so that 80% of the will train the model and 20% will test it.
+To train and test our model with our data, we split it so that 80% of the will train the model and 20% will test it. The split is random
 ```{r}
-x <- round(nrow(df_lm) * 0.8)
-y <- x + 1
-df_lm_train <- df_lm[1:x, ]
-df_lm_test <- df_lm[y:nrow(df_lm), ]
+set.seed(123)
+n <- nrow(df_lm)
+x <- sample(c(TRUE, FALSE), n, replace=TRUE, prob=c(0.8, 0.2))
+df_lm_train <- df_lm[x, ]
+df_lm_test <- df_lm[!x, ]
 ```
 
 Now, we can train the model using df_lm_train.
@@ -84,7 +85,7 @@ plot(
   ylab = 'Predicted values'
 ); abline(0, 1, col = "blue", lwd = 5)
 ```
-!!! Model describes left shift very good, but right shifts not !!!
+!!! Model describes left shift good, but right shifts not !!!
 
 We can also try to evaluate how accurate our model is by having a look at the confidence intervals.
 ```{r}
@@ -168,6 +169,151 @@ counter / nrow(df_lm_predict_ab) * 100
 mean(pm_ab$se.fit)
 ```
 
+
+
+
+## more regression models
+
+regression model: using differences between ctrl and rnase conditions
+
+```{r}
+# create df that will contain important information for linear modelling
+df_lm <- data.frame(row.names = colnames(tdf))
+
+# add vector containing correlation between rnase and control condition to df
+vec_cor <- apply(tdf, 2, function(x) {
+  cor(x[1:25], x[26:50])
+})
+df_lm$correlation <- vec_cor
+df_lm$shift <- shift_global
+
+# add row with absolute shifts
+df_lm$ab_shift <- abs(df_lm$shift)
+
+# add differences between rnase and ctrl conditions
+for (i in 1:nrow(df_normalized_combined)) {
+  
+  s <- 0
+  
+  for (j in 1:25) {
+    s <- s + abs(df_normalized_combined[i, j] - df_normalized_combined[i, j + 25])
+  }
+  
+  df_lm$dif[i] <- s
+  
+}
+```
+
+```{r}
+# split dataset into train and test 
+set.seed(123)
+n <- nrow(df_lm)
+x <- sample(c(TRUE, FALSE), n, replace=TRUE, prob=c(0.8, 0.2))
+df_lm_train <- df_lm[x, ]
+df_lm_test <- df_lm[!x, ]
+```
+
+```{r}
+# train linear model
+linear_model <- lm(ab_shift ~ dif + correlation, data = df_lm_train)
+summary(linear_model)
+```
+
+```{r}
+# normal distribution of residuals? 
+hist(linear_model$residuals, breaks = 20)
+
+qqnorm(linear_model$residuals)
+qqline(linear_model$residuals)
+
+## correlation residuals x-values? 
+cor(df_lm_train$dif, linear_model$residuals)
+plot(df_lm_train$dif, linear_model$residuals, pch = 20)
+```
+
+```{r}
+pm <- predict.lm(linear_model, newdata = df_lm_test, se.fit = TRUE, interval = "confidence")
+
+df_lm_predict <- as.data.frame(cbind(df_lm_test$ab_shift, pm$fit))
+```
+
+```{r}
+plot(
+  df_lm_predict$V1,
+  df_lm_predict$fit,
+  pch = 20,
+  col = 'blue',
+  xlab = 'Real values',
+  ylab = 'Predicted values'
+); abline(0, 1, col = "blue", lwd = 5)
+```
+
+
+
+## comparison with data bases
+
+Finally, we want to compare our results with given results (e.g. databases)
+```{r}
+df_rdeep <- readRDS("RDeeP_HeLa_Mitosis_rdeep.rds")
+
+rdeep <- rownames(df_rdeep)
+non_rdeep <- rownames(df_normalized)[-df_rdeep$index]
+```
+
+Before executing the next step, load HS_non_RBPs.RData and HS_RBPs.RData!
+
+```{r}
+# number of our RDeePs which are RBPs
+counter <- 0
+
+for (i in rdeep) {
+  if (i %in% HS_RBPs$Entry_Name.x) {
+    counter <- counter + 1
+  }
+}
+counter
+```
+
+```{r}
+# number of our RDeePs which are non RBPs
+
+counter <- 0
+
+for (i in rdeep) {
+  if (i %in% HS_non_RBPs$Entry_Name.x) {
+    counter <- counter + 1
+  }
+}
+counter
+```
+
+```{r}
+# number of our non RDeePs which are RBPs
+
+counter <- 0
+
+for (i in non_rdeep) {
+  if (i %in% HS_RBPs$Entry_Name.x) {
+    counter <- counter + 1
+  }
+}
+counter
+```
+
+```{r}
+# number of our non RDeePs which are non RBPs
+
+counter <- 0
+
+for (i in non_rdeep) {
+  if (i %in% HS_non_RBPs$Entry_Name.x) {
+    counter <- counter + 1
+  }
+}
+counter
+```
+
+
 ## comparison with local maxima
 
 To have a look at the local maxima as well, we are going to calculate a global profile for every protein's local maxima by computing the squared sums of the maxima's fractions for both conditions. Later, we can use this information to compare the results with our RDeePs in order to see whether leaving out the local maxima was making our results less accurate.
@@ -219,63 +365,6 @@ x2 <- c(intersect(shift_proteins_l, sig_dif_proteins_rep))
 x3 <- c(x1, x2)
 length(unique(x3))
 ```
-
-
-## comparison with data bases
-
-```{r}
-df_rdeep <- readRDS("RDeeP_HeLa_Mitosis_rdeep.rds")
-
-rdeep <- rownames(df_rdeep)
-non_rdeep <- rownames(df_normalized)[-df_rdeep$index]
-```
-
-```{r}
-counter <- 0
-
-for (i in rdeep) {
-  if (i %in% HS_RBPs$Entry_Name.x) {
-    counter <- counter + 1
-  }
-}
-counter
-```
-
-```{r}
-counter <- 0
-
-for (i in rdeep) {
-  if (i %in% HS_non_RBPs$Entry_Name.x) {
-    counter <- counter + 1
-  }
-}
-counter
-```
-
-```{r}
-counter <- 0
-
-for (i in non_rdeep) {
-  if (i %in% HS_RBPs$Entry_Name.x) {
-    counter <- counter + 1
-  }
-}
-counter
-```
-
-```{r}
-counter <- 0
-
-for (i in non_rdeep) {
-  if (i %in% HS_non_RBPs$Entry_Name.x) {
-    counter <- counter + 1
-  }
-}
-counter
-```
-
-
-
 
 
 
