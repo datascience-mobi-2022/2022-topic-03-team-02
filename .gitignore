@@ -15,3 +15,5 @@ RDeeP_HeLa_Mitosis_global_maxima.rds
 tres_values.rds
 *.Rds
 *.RData
+part*
+~$*
