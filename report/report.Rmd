@@ -10,7 +10,6 @@ linestretch: 1.5
 
 bibliography: references.bib
 csl: citationstyle.csl
-
 ---
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -116,6 +115,7 @@ According to aforementioned methods and criteria, we computed the RNA-dependence
 
 ## **3.2 Performing Dimension Reduction Analysis**
 
+![Caption 1.]("C:/Users/lenna/OneDrive/Dokumente/2022-topic-03-team-02/report/images/UMAP.png")
 
 
 
