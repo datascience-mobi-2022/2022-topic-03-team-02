@@ -10,7 +10,9 @@ linestretch: 1.5
 
 bibliography: references.bib
 csl: citationstyle.csl
+
 ---
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
@@ -54,7 +56,7 @@ While the study and quantification of RBPs has received much attention in previo
 While not devoid of its own limitations, the here presented method provides a novel approach to the proteome-wide screening of RBPs with the goal of validating the core set of RBPs previously defined while also contributing to adding new proteins to the number of possible RBP candidates.\
 For this purpose, the notion of RNA dependence was introduced, defining a protein as RNA dependent when its interactome depends on RNA, while binding to RNA is sufficient but not necessary to qualify as RNA dependent. Thus, every RNA binding protein is RNA dependent, but not every RNA dependent protein is RNA binding [@caudron2019r].
 
-The method here employed relies on the differential migration pattern of proteins in a sucrose density gradient ultracentrifugation in the presence or absence of RNA.\
+The method here employed relies on the differential migration pattern of proteins in a sucrose density gradient after ultracentrifugation in the presence or absence of RNA.\
 In density gradient centrifugation, macromolecules such as proteins are forced through a density gradient until they find a density equal to their own (Farrell, 2010). Thereby the rate of sedimentation is function of size, shape and density of the macromolecules, as well as density and viscosity of the gradient and applied centrifugal force (Raschke et al., 2009).\
 Here, triplicates of native (control) and RNase-treated cell lysates from HeLa cells synchronized in mitosis were loaded onto a 5% to 50% sucrose density gradient. Upon ultracentrifugation, the gradient was divided into 25 fractions and the protein amount of individual proteins per fraction determined by quantitative mass spectrometry. Because RNA-dependent proteins directly or indirectly depend on the presence of RNA, they are expected to show a different migration pattern between control and RNase-treated groups [@caudron2019r].
 
@@ -96,11 +98,18 @@ For the purpose of determining the shift in position of the global maximum, we u
 Significance of difference in protein amount was tested using a Student's t-test. Here, for every given protein, we first determined the global maximum for each replicate in control, yielding a vector containing the magnitude and the respective fraction of each maximum. Subsequently, protein amount values at the respective fractions in RNase were determined, yielding a second vector containing protein amount values at the respective fractions. We then tested whether protein amount values from the first vector significantly differed from those of the second vector and thus tested significance of difference in protein amount for each protein in our data set, leading to a total of 7127 t-tests performed. P-values were corrected for multiple testing by controlling the false-discovery rate (FDR) according to @benjamini1995controlling, using the function `p.adjust`. Therefore, difference in protein amount was regarded as significant if the FDR-corrected p-value $p$ was smaller than the chosen significance level of $\alpha=0.05$. 
 
 ## **2.3 Performing Dimension Reduction Analysis**
-In this step of our analysis, we looked at a data set that, for a given protein, combine all three replicates of a given condition using the mean value method, meaning that each protein can be characterized by fifty values - 25 mean protein amount values from control and 25 mean protein amount values from RNase.Thus, each protein from our data set can be depicted as a point in a fifty-dimensional space. Here, in order to identify directions in the data corresponding to biological effects, we sought to transform our data from this high-dimensional space into a lower-dimensional space with fewer relevant variables while retaining as much variance in our data as possible. For this purpose, we performed principal component analysis (PCA) on our data set using the function `prcomp`, followed by Uniform Manifold Approximation and Projection (UMAP) analysis using the function `umap`. 
-Subsequently, we colored proteins according to their shifting behavior, differentiating between left shifting, right shifting and not shifting proteins. Left shifting proteins were defined as proteins whose maximum shifted towards smaller fractions between control and RNase condition as determined in part 2.2, i. e. proteins whose real shift in position of the global maximum was negative. Similarly, right shifting proteins showed a shift in position of the global maximum towards higher fractions, and not shifting proteins a real shift of zero.
+In this step of our analysis, we looked at a data set that, for a given protein, combine all three replicates of a given condition using the mean value method, meaning that each protein can be characterized by fifty values - 25 mean protein amount values from control and 25 mean protein amount values from RNase.Thus, each protein from our data set can be depicted as a point in a fifty-dimensional space. Here, in order to identify directions in the data corresponding to biological effects, we sought to transform our data from this high-dimensional space into a lower-dimensional space with fewer relevant variables while retaining as much variance in our data as possible. For this purpose, we performed principal component analysis (PCA) on our data set using the built-in function `prcomp`, followed by Uniform Manifold Approximation and Projection (UMAP) analysis using the function `umap`. 
+Subsequently, we colored proteins according to their shifting behavior, once with respect to whether or not they show a shift at all and once furhter differentiating between left shifting, right shifting and not shifting proteins. Left shifting proteins were defined as proteins whose maximum shifted towards smaller fractions between control and RNase condition as determined in part 2.2, i. e. proteins whose real shift in position of the global maximum was negative. Similarly, right shifting proteins showed a shift in position of the global maximum towards higher fractions, and not shifting proteins a real shift of zero.
 
 ## **2.4 Developing a Linear Regression Model**
-Last, we sought to develop a linear regression model that features variables from our previous analysis steps. Here, we tried to predict the absolute and real shift in position of the global maximum using the correlation between the mean protein amount values between control and RNase for each given protein. This approach is based on the rationale that proteins with 
+Last, for all proteins included in our data set, we sought to develop a linear regression model that features variables from our previous analysis steps. Here, we tried to predict the absolute and real shift in position of the global maximum using the correlation between the mean protein amount values between control and RNase for each given protein. This approach is based on the rationale that proteins with low correlation between control and RNase are expected to show distinct alterations in the distribution of protein amount values across all 25 fractions between both conditions, which in turn may increase the chance for a protein to show a shifting behavior by our definitions as stated above.
+For that purpose, we randomly split our data set so that 80% of all proteins included served to train our model while the remaining 20% were used to test it. We used the built-in function `lm` to do the training and `lm.predict` for the purpose of testing.
+
+- absoluter versus realer shift durch korrelation zwischen kombinierten 
+- residuals etc. bewiesen 
+
+
+- precision recall 
 
 \newpage
 
@@ -113,14 +122,24 @@ Last, we sought to develop a linear regression model that features variables fro
 ## **3.1 RNA-dependent proteins**
 According to aforementioned methods and criteria, we computed the RNA-dependence status for all 7127 still included in our data set and identified a total of 657 as RNA-dependent, which amounts to around 9.2% of all proteins tested.
 
+
+- Precision, recall 
+
 ## **3.2 Performing Dimension Reduction Analysis**
 
-![Caption 1.]("C:/Users/lenna/OneDrive/Dokumente/2022-topic-03-team-02/report/images/UMAP.png")
+```{r, echo=FALSE, out.width="49%", fig.align = "center", fig.show='hold', fig.cap="Test"}
+knitr::include_graphics(
+  c("C:/Users/lenna/OneDrive/Dokumente/2022-topic-03-team-02/report/images/UMAP.png",
+    "C:/Users/lenna/OneDrive/Dokumente/2022-topic-03-team-02/report/images/UMAP.png")
+)
+```
+- Result: Es bilden sich zusammengehlrige Gruppen! 
 
 
+- "Tröpfchenplot"
+- Plot: no shift/shift und left/right/no nebeneinander!
 
-
-
+- kmeans auf shift gemacht und wenn PLatz einfügen
 \newpage
 
 # **4. Discussion**
