@@ -1323,20 +1323,33 @@ for (i in 1:nrow(df_umap)) {
 ```
 
 ```{r}
-alpha <- ifelse(df_umap$shift == "no shift", 0.1, 1)
+alpha1 <- ifelse(df_umap$shift == "no shift", 0.1, 1)
 
 ggplot(df_umap, aes(x = V1, y = V2, color = shift)) +
-  geom_point(alpha = alpha) +
+  geom_point(alpha = alpha1) +
   ggtitle("UMAP of normalized and combined data")
 ```
 
 ```{r}
-alpha <- ifelse(df_umap$rdeep == "non rdeep", 0.1, 1)
+alpha2 <- ifelse(df_umap$rdeep == "non rdeep", 0.1, 1)
 
 ggplot(df_umap, aes(x = V1, y = V2, color = rdeep)) +
-  geom_point(alpha = alpha) +
+  geom_point(alpha = alpha2) +
   ggtitle("UMAP of normalized and combined data")
 ```
+
+```{r}
+plot1 <- ggplot(df_umap, aes(x = V1, y = V2, color = shift)) +
+  geom_point(alpha = alpha1) +
+  ggtitle("UMAP of normalized and combined data")
+
+plot2 <- ggplot(df_umap, aes(x = V1, y = V2, color = rdeep)) +
+  geom_point(alpha = alpha2) +
+  ggtitle("UMAP of normalized and combined data")
+
+cowplot::plot_grid(plot1, plot2, labels = "AUTO")
+```
+
 
 We can do the same for pca.
 ```{r}
@@ -1698,7 +1711,7 @@ counter
 ```
 
 ```{r}
-# number of our RDeePs which are non RBPs
+# number of our RDeePs which are non RBP
 
 counter <- 0
 
@@ -1711,7 +1724,7 @@ counter
 ```
 
 ```{r}
-# number of our non RDeePs which are RBPs
+# number of our non RDeePs which are RBP
 
 counter <- 0
 
@@ -1724,13 +1737,43 @@ counter
 ```
 
 ```{r}
-# number of our non RDeePs which are non RBPs
+# number of our non RDeePs which are non RBP
 
 counter <- 0
 
 for (i in non_rdeep) {
   if (i %in% HS_non_RBPs$Entry_Name.x) {
     counter <- counter + 1
+  }
+}
+counter
+```
+
+```{r}
+# number of our RDeePs which are RDeeP
+
+counter <- 0
+
+for (i in 1:nrow(HS_RBPs)) {
+  if (HS_RBPs$Entry_Name.x[i] %in% rdeep) {
+    if (HS_RBPs$R.DeeP_HeLa[i] == "X") {
+      counter <- counter + 1
+    }
+  }
+}
+counter
+```
+
+```{r}
+# number of our non RDeePs which are RDeeP
+
+counter <- 0
+
+for (i in 1:nrow(HS_RBPs)) {
+  if (HS_RBPs$Entry_Name.x[i] %in% non_rdeep) {
+    if (HS_RBPs$R.DeeP_HeLa[i] == "X") {
+      counter <- counter + 1
+    }
   }
 }
 counter
