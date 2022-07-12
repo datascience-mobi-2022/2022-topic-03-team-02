@@ -126,13 +126,15 @@ According to aforementioned methods and criteria, we computed the RNA-dependence
 - Precision, recall 
 
 ## **3.2 Performing Dimension Reduction Analysis**
-
+Dimension reduction analysis was performed by aforementioned methods and proteins colored according to their shifting behavior (Figure 2).
 ```{r, echo=FALSE, out.width="49%", fig.align = "center", fig.show='hold', fig.cap="Test"}
 knitr::include_graphics(
   c("C:/Users/lenna/OneDrive/Dokumente/2022-topic-03-team-02/report/images/UMAP.png",
     "C:/Users/lenna/OneDrive/Dokumente/2022-topic-03-team-02/report/images/UMAP.png")
 )
 ```
+Here, it can be seen that proteins with the same shifting behavior generally tend to organize themselves into regionally distinct groups in this low-dimensional representation. Importantly, these findings suggest that there exists an underlying structure that seems to be valid even outside of our arbitrarily-defined groups of shifting behaviors.
+
 - Result: Es bilden sich zusammengehlrige Gruppen! 
 
 
