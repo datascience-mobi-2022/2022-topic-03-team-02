@@ -14,9 +14,14 @@ library("factoextra")
 ```
 
 
+
+
+
 # PART 1
 
-## load data
+
+
+## load data (data given by advisor)
 
 The data frame is loaded as describe on the Github page for project 3.
 ```{r}
@@ -63,27 +68,6 @@ del_row_sort <- sort(unique(del_row))
 del_row_sort
 ```
 
-(Then we want to check whether the rows contain only zeros in all replicates, or just in one or two replicates, which could allow us to use mean values as a replacement.)
-
-```{r}
-#Keep the rows in which only one replicate has no values, but the other replicates have normal values
-#del_row_sort gives the numbers of the rows which include only zeros in at least one replicate
-#del_row_refined = sort(unique(del_row)[table(del_row)<=2])
-
-#for (i in del_row__refined) {
-  #iterate through all rows in which there are only zeros in at least one replicate
-  
-#  for(j in c("Ctrl_Rep1", "Ctrl_Rep2", "Ctrl_Rep3", "RNase_Rep1", "RNase_Rep2", "RNase_Rep3")){
-    #iterate through all replicates
-    
-#       if (sum(MS_Table[i, grep(j, colnames(MS_Table))]) <= 0) {
-#        row_means_possible<- append(row_means_possible, i)
-#        }
-#    }
-#  }
-```
-
-
 Therefore, we remove rows 691, 3045, 3575, 4057, 5568, 6732 and 7112.
 ```{r}
 # remove the rows saved in del_row_sort
@@ -112,7 +96,6 @@ head(colnames(MS_Table))
 ## normalize replicates
 
 In the first normalization step, we want to have a look at the replicates of every fraction under every condition. Theoretically, the three replicates of each fraction are equal, due to them being the results of the same experiment. However, due to experimental differences, this usually is not the case. Therefore, we normalize the replicates in order to make them comparable. To do so, we normalize every three replicates of a given fraction and condition by computing their sums and then computing the mean value of the two closest sums. The quotients of this mean sum and the three sums of the replicates will give us the normalization factors for the three replicates.
-
 
 ```{r}
 for (i in seq(1, 148, by = 3)) {
@@ -163,9 +146,8 @@ for (i in seq(1, 148, by = 3)) {
     print(i)
   }
 }
-counter == 0
+counter == 0 # must be TRUE
 ```
-
 
 ## normalize protein amount per fraction
 
@@ -345,13 +327,13 @@ for (t in seq(0, 0.8, by = 0.05)) {
 To evaluate a fitting threshold value we are going to plot the number of proteins which would be removed against the respective threshold value. 
 
 ```{r}
-plot(seq(0, 0.8, 0.05), tres_values, type = "b", xlab = "threshold value", ylab = "number of removed proteins", main = "")
+plot(seq(0, 0.8, 0.05), tres_values, type = "b", xlab = "Threshold value", ylab = "Number of removed proteins", main = "Evaluating the reproducibility of our data")
 ```
 Value 0.6 seems to be a good fit. We can also have a look at the correlation values we just computed by visualizing them with a plot. For example, we can have a look at the distribution:
 
 ```{r}
 cor_vec <- c(c1c2, c1c3, c2c3, r1r2, r1r3, r2r3)
-hist(cor_vec)
+hist(cor_vec, ylim = c(0, 1000), xlab = "Correlation value", main = "Histogram of correlation values")
 ```
 Here it also looks like 0.6 is a good threshold value. 
 
@@ -366,7 +348,8 @@ df_plot1 <-
 plot1 <- ggplot(df_plot1, aes(x, y)) +
   geom_point() +
   geom_smooth() +
-  labs(x = "K2C1_HUMAN RNase Rep1", y = "K2C1_HUMAN RNase Rep3")
+  labs(x = "K2C1_HUMAN RNase Rep1", y = "K2C1_HUMAN RNase Rep3") +
+  ggtitle("Low correlation example")
 
 # strong correlation
 set.seed(124)
@@ -378,7 +361,8 @@ df_plot2 <-
 plot2 <- ggplot(df_plot2, aes(x, y)) +
   geom_point() +
   geom_smooth() +
-  labs(x = "ECE1_HUMAN Ctrl Rep1", y = "ECE1_HUMAN Ctrl Rep2")
+  labs(x = "ECE1_HUMAN Ctrl Rep1", y = "ECE1_HUMAN Ctrl Rep2") +
+  ggtitle("High correlation example")
 
 # plot
 cowplot::plot_grid(plot1, plot2, labels = "AUTO")
@@ -434,15 +418,16 @@ if (length(remove_proteins) != 0) {
 dim(df_normalized)
 ```
 
-Now, we have removed 25 proteins due to an expected low reproducibility. We can save this data frame as a new file **RDeeP_HeLa_Mitosis_normalized.rds**:
+Now, we have removed 25 proteins due to an expected low reproducibility. Together with the 7 ones removed in the beginning, we have removed a total of 32 proteines, which is 0.4% of the proteins.
+We can save this data frame as a new file **RDeeP_HeLa_Mitosis_normalized.rds**:
 
 ```{r}
-saveRDS(df_normalized, file = "RDeeP_HeLa_Mitosis_normalized.rds")
+#saveRDS(df_normalized, file = "RDeeP_HeLa_Mitosis_normalized.rds")
 ```
 
 ```{r}
-df_normalized <- readRDS("RDeeP_HeLa_Mitosis_normalized.rds")
-sum(df_normalized) / 600 == nrow(df_normalized)
+#df_normalized <- readRDS("RDeeP_HeLa_Mitosis_normalized.rds")
+#sum(df_normalized) / 600 == nrow(df_normalized)
 ```
 
 ## combining replicates using mean value
@@ -516,20 +501,23 @@ Lastly, we can save that data frame as a file again to avoid running the code ab
 
 ```{r}
 # for report
-saveRDS(tres_values, file = "tres_values.rds")
+#saveRDS(tres_values, file = "tres_values.rds")
 
-saveRDS(df_normalized_combined, file = "RDeeP_HeLa_Mitosis_normalized_combined.rds")
+#saveRDS(df_normalized_combined, file = "RDeeP_HeLa_Mitosis_normalized_combined.rds")
 ```
+
 
 
 
 
 # PART 2
 
+
+
 ## load data
  
 ```{r}
-df_normalized_combined <- readRDS("RDeeP_HeLa_Mitosis_normalized_combined.rds")
+#df_normalized_combined <- readRDS("RDeeP_HeLa_Mitosis_normalized_combined.rds")
 ```
 
 ```{r}
@@ -537,6 +525,8 @@ dim(df_normalized_combined)
 ```
 
 ## global maxima for combined values
+
+Here, we want to identify the global maximum for every protein under both conditions using the normalized and combined data.
 
 ```{r}
 d <- dim(df_normalized_combined)
@@ -627,7 +617,7 @@ sum(df_global_maxima != df_global_maxima_test)
 ```
 
 ```{r}
-saveRDS(df_global_maxima, file = "RDeeP_HeLa_Mitosis_global_maxima.rds")
+#saveRDS(df_global_maxima, file = "RDeeP_HeLa_Mitosis_global_maxima.rds")
 ```
 
 ## global maxima for every replicate
@@ -738,17 +728,16 @@ colnames(df_global_maxima_rep) <-
 ```
 
 ```{r}
-saveRDS(df_global_maxima_rep, file = "RDeeP_HeLa_Mitosis_global_maxima_rep.rds")
+#saveRDS(df_global_maxima_rep, file = "RDeeP_HeLa_Mitosis_global_maxima_rep.rds")
 ```
 
 ## local maxima 
 
-```{r}
-plot(1:25, df_normalized_combined[14, 1:25], type = "b")
-plot(1:25, df_normalized_combined[2898, 1:25], type = "b")
-plot(1:25, df_normalized_combined[2900, 1:25], type = "b")
-plot(1:25, df_normalized_combined[2901, 1:25], type = "b")
-```
+In this part, we also want to identify local maxima for every protein and condition. A local maxima must fulfill three criteria:
+
+- must not be greater than the global maximum
+- must be greater than the two neighbouring pairs
+- must be greater than 4
 
 ### local maxima ctrl
 
@@ -1054,21 +1043,24 @@ rownames(df_local_maxima) <- rownames(df_normalized_combined)
 ```
 
 ```{r}
-saveRDS(df_local_maxima, file = "RDeeP_HeLa_Mitosis_local_maxima.rds")
+#saveRDS(df_local_maxima, file = "RDeeP_HeLa_Mitosis_local_maxima.rds")
 ```
+
 
 
 
 
 # PART 3
 
+
+
 ## load data
 
 ```{r}
-df_normalized <- readRDS("RDeeP_HeLa_Mitosis_normalized.rds")
-df_normalized_combined <- readRDS("RDeeP_HeLa_Mitosis_normalized_combined.rds")
-df_global_maxima <- readRDS("RDeeP_HeLa_Mitosis_global_maxima.rds")
-df_global_maxima_rep <- readRDS("RDeeP_HeLa_Mitosis_global_maxima_rep.rds")
+#df_normalized <- readRDS("RDeeP_HeLa_Mitosis_normalized.rds")
+#df_normalized_combined <- readRDS("RDeeP_HeLa_Mitosis_normalized_combined.rds")
+#df_global_maxima <- readRDS("RDeeP_HeLa_Mitosis_global_maxima.rds")
+#df_global_maxima_rep <- readRDS("RDeeP_HeLa_Mitosis_global_maxima_rep.rds")
 ```
 
 ## shift of global maxima > n fractions
@@ -1253,20 +1245,8 @@ sum(rownames(df_normalized)[rdeep_index_rep] != rdeep_rep)
 
 ```{r}
 df_rdeep <- data.frame(row.names = rdeep_rep, index = rdeep_index_rep)
-saveRDS(df_rdeep, file = "RDeeP_HeLa_Mitosis_rdeep.rds")
+#saveRDS(df_rdeep, file = "RDeeP_HeLa_Mitosis_rdeep.rds")
 ```
-
-
-
-
-Edit: Maybe we can also define proteins as RDeeP if their shift is great enough, even if the t-test is not significant (e.g. shift > 8)
-
-```{r}
-length(which(shift_global > 8))
-x <- which(shift_global > 8)
-names(shift_global)[x]
-```
-
 
 
 
@@ -1274,12 +1254,14 @@ names(shift_global)[x]
 
 # PART 4
 
+
+
 ## Dimension Reduction
 
 Load the normalized and combined data:
 ```{r}
-df_normalized_combined <- readRDS("RDeeP_HeLa_Mitosis_normalized_combined.rds")
-df_normalized <- readRDS("RDeeP_HeLa_Mitosis_normalized.rds")
+#df_normalized_combined <- readRDS("RDeeP_HeLa_Mitosis_normalized_combined.rds")
+#df_normalized <- readRDS("RDeeP_HeLa_Mitosis_normalized.rds")
 ```
 
 Perform pca and umap or only umap or only pca on our data:
@@ -1300,13 +1282,16 @@ df_pca <- as.data.frame(prcomp(df)$x)
 Plot the results to see whether they differ or not:
 ```{r}
 ggplot(df_umap1, aes(x = V1, y = V2)) +
-  geom_point()
+  geom_point() +
+  ggtitle("pca and umap")
 
 ggplot(df_umap2, aes(x = V1, y = V2)) +
-  geom_point()
+  geom_point() +
+  ggtitle("umap")
 
 ggplot(df_pca, aes(x = PC1, y = PC2)) +
-  geom_point()
+  geom_point() + 
+  ggtitle("pca")
 ```
 
 Now, we can colour proteins according to their shifting behaviour.
@@ -1346,25 +1331,14 @@ ggplot(df_umap, aes(x = V1, y = V2, color = shift)) +
 ```
 
 ```{r}
+alpha <- ifelse(df_umap$rdeep == "non rdeep", 0.1, 1)
+
 ggplot(df_umap, aes(x = V1, y = V2, color = rdeep)) +
-  geom_point() +
+  geom_point(alpha = alpha) +
   ggtitle("UMAP of normalized and combined data")
 ```
 
-```{r}
-x <- grep("left", df_umap$shift)
-y <- grep("right", df_umap$shift)
-z <- c(x, y)
-
-df_umap_shift <- df_umap[z, ]
-df_umap_no_shift <- df_umap[-z, ]
-
-ggplot(df_umap_shift, aes(x = V1, y = V2, color = shift)) +
-  geom_point()
-ggplot(df_umap_no_shift, aes(x = V1, y = V2, color = shift)) +
-  geom_point()
-```
-
+We can do the same for pca.
 ```{r}
 n = 1
 df_pca_shift <- cbind(df_pca, matrix(0, nrow(df_normalized_combined), 1))
@@ -1383,15 +1357,17 @@ for (i in 1:nrow(df_pca_shift)) {
 ```
 
 ```{r}
-ggplot(df_pca_shift, aes(x = PC1, y = PC2, color = shift)) +
-  geom_point()
-```
+alpha <- ifelse(df_pca_shift$shift == "no shift", 0.3, 1)
 
+ggplot(df_pca_shift, aes(x = PC1, y = PC2, color = shift)) +
+  geom_point(alpha = alpha) +
+  ggtitle("PCA of normalized and combined data")
+```
 
 ## group proteins according to their shifting behaviour
 
 ```{r}
-df_global_maxima <- readRDS("RDeeP_HeLa_Mitosis_global_maxima.rds")
+#df_global_maxima <- readRDS("RDeeP_HeLa_Mitosis_global_maxima.rds")
 ```
 
 ```{r}
@@ -1416,21 +1392,13 @@ ggplot(
   df_global_maxima_shift,
   aes(y = ctrl_global_maximum_fraction, x = rnase_global_maximum_fraction, color = shift)) +
   geom_count() +
-  ggtitle("shifting behaviour of proteins") +
+  ggtitle("Shifting behaviour of proteins") +
   xlab("global maximum RNase condition") + ylab("global maximum Ctrl conditions")
 ```
 
-```{r}
-ggplot(
-  df_global_maxima_shift,
-  aes(y = ctrl_global_maximum_fraction, x = rnase_global_maximum_fraction, color = shift)) +
-  geom_jitter() +
-  ggtitle("shifting behaviour of proteins") +
-  xlab("global maximum RNase condition") + ylab("global maximum Ctrl conditions")
-```
+## kmeans with shift
 
-## kmeans with protein amount
-
+We are going to apply kmeans using the shift of global maxima for every protein.
 ```{r}
 df_cluster <- as.data.frame(cbind(shift_global, pval_adjust_rep))
 rownames(df_cluster) <- rownames(df_normalized)
@@ -1447,47 +1415,15 @@ df_cluster$ctrl_maximum <- df_global_maxima$ctrl_global_maximum_fraction
 df_cluster$rnase_maximum <- df_global_maxima$rnase_global_maximum_fraction
 ```
 
+First, we want to check how many centers we should define.
 ```{r}
 wss = sapply(2:10, function(x) { 
-  kmeans(df_normalized_combined, centers = x, nstart = 100)$tot.withinss
+  kmeans(df_cluster[,1], centers = x, nstart = 100)$tot.withinss
 })
 plot(2:10, wss, xlab = "numbers of centers", ylab = "total within-cluster sum of squares", type = "b")
 ```
 
-```{r}
-tdf_normalized_combined <- t(df_normalized_combined)
-km <- kmeans(df_normalized_combined, centers = 3, nstart = 100)
-
-fviz_cluster(km, data = df_normalized_combined,
-             #palette = c("#2E9FDF", "#00AFBB", "#E7B800"), 
-             geom = "point",
-             ellipse.type = "convex", 
-             ggtheme = theme_bw()
-             )
-```
-
-
-```{r}
-df_cluster$cluster <- as.character(km$cluster)
-
-ggplot(
-  df_cluster,
-  aes(y = ctrl_maximum, x = rnase_maximum, color = cluster)) +
-  geom_count() +
-  ggtitle("shifting behaviour of proteins") +
-  xlab("global maximum RNase condition") + ylab("global maximum Ctrl conditions")
-```
-
-```{r}
-df_umap$cluster <- as.character(km$cluster)
-
-ggplot(df_umap, aes(x = V1, y = V2, color = cluster)) +
-  geom_point() +
-  ggtitle("UMAP of normalized and combined data")
-```
-
-## kmeans with shift
-
+Due to no kink being visible, we are going to use 3 centers to cluster for no shift, right shift and left shift.
 ```{r}
 km2 <- kmeans(df_cluster[,1], centers = 3)
 ```
@@ -1497,49 +1433,36 @@ df_umap$cluster2 <- as.character(km2$cluster)
 
 ggplot(df_umap, aes(x = V1, y = V2, color = cluster2)) +
   geom_point() +
-  ggtitle("UMAP of normalized and combined data")
+  ggtitle("UMAP of normalized and combined data, proteins coloured according to kmeans")
 ```
+
+The results look a lot like the plot above, where we coloured proteins according to their shifting behaviour.
+
+
+
+
+
+# PART 5
+
+
+
+## load data
 
 ```{r}
-wss = sapply(2:10, function(x) { 
-  kmeans(df_cluster[,1], centers = x, nstart = 100)$tot.withinss
-})
-plot(2:10, wss, xlab = "numbers of centers", ylab = "total within-cluster sum of squares", type = "b")
+#df_normalized <- readRDS("RDeeP_HeLa_Mitosis_normalized.rds")
+#df_normalized_combined <- readRDS("RDeeP_HeLa_Mitosis_normalized_combined.rds")
 ```
 
-## more stuff
+## create data frame for linear regression
 
-```{r}
-ggplot(df_cluster, aes(x = abs(shift_global), y = pval_adjust_rep, color = rdeep)) +
-  geom_count()
-```
-
-
-
-
-
-
-# PART 5 
-
-## predict shift with correlation
-
-load data:
-```{r}
-df_normalized <- readRDS("RDeeP_HeLa_Mitosis_normalized.rds")
-df_normalized_combined <- readRDS("RDeeP_HeLa_Mitosis_normalized_combined.rds")
-```
-
-RDeePs should have a lower correlation between RNase und Ctrl conditions than non-RDeePs:
 ```{r}
 tdf <- as.data.frame(t(df_normalized_combined))
-cor(tdf$EED_HUMAN[1:25], tdf$EED_HUMAN[26:50])  # RDeeP
-cor(tdf$`1433B_HUMAN`[1:25], tdf$`1433B_HUMAN`[26:50]) # non-RDeeP
 ```
 
-Using this, we can try to make a linear regression model.
+First, we want to create a data frame which hold all important information we need for our regression analysis.
 ```{r}
 # create df that will contain important information for linear modelling
-df_lm <- data.frame(row.names = colnames(tdf))
+df_lm <- data.frame(row.names = rownames(df_normalized_combined))
 
 # add vector containing correlation between rnase and control condition to df
 vec_cor <- apply(tdf, 2, function(x) {
@@ -1547,14 +1470,49 @@ vec_cor <- apply(tdf, 2, function(x) {
 })
 df_lm$correlation <- vec_cor
 df_lm$shift <- shift_global
+
+# add row with absolute shifts
+df_lm$ab_shift <- abs(df_lm$shift)
+
+# add differences between rnase and ctrl conditions
+for (i in 1:nrow(df_normalized_combined)) {
+  
+  s <- 0
+  
+  for (j in 1:25) {
+    s <- s + abs(df_normalized_combined[i, j] - df_normalized_combined[i, j + 25])
+  }
+  
+  df_lm$dif[i] <- s
+  
+}
+
+# add whether every protein is rdeep or not
+df_lm$rdeep <- df_umap$rdeep
+for (i in 1:nrow(df_lm)) {
+  if (df_lm$rdeep[i] == "rdeep") {
+    df_lm$rdeep2[i] <- 1
+  } else {
+    df_lm$rdeep2[i] <- 0
+  }
+}
 ```
 
-To train and test our model with our data, we split it so that 80% of the will train the model and 20% will test it.
+## predict shift with correlation
+
+RDeePs should have a lower correlation between RNase und Ctrl conditions than non-RDeePs:
 ```{r}
-x <- round(nrow(df_lm) * 0.8)
-y <- x + 1
-df_lm_train <- df_lm[1:x, ]
-df_lm_test <- df_lm[y:nrow(df_lm), ]
+cor(tdf$EED_HUMAN[1:25], tdf$EED_HUMAN[26:50])  # RDeeP
+cor(tdf$`1433B_HUMAN`[1:25], tdf$`1433B_HUMAN`[26:50]) # non-RDeeP
+```
+
+Using this, we can try to make a linear regression model. To train and test our model with our data, we split it so that 80% of the will train the model and 20% will test it. The split is random.
+```{r}
+set.seed(123)
+n <- nrow(df_lm)
+x <- sample(c(TRUE, FALSE), n, replace=TRUE, prob=c(0.8, 0.2))
+df_lm_train <- df_lm[x, ]
+df_lm_test <- df_lm[!x, ]
 ```
 
 Now, we can train the model using df_lm_train.
@@ -1566,14 +1524,14 @@ summary(linear_model)
 We can now check some things to decide whether this model is valid or not (residuals normally distributed, residuals not correlated to explanatory variable).
 ```{r}
 # normal distribution of residuals? 
-hist(linear_model$residuals, breaks = 20)
+hist(linear_model$residuals, breaks = 20, main = "Histogram of residuals", xlab = "Residuals")
 
 qqnorm(linear_model$residuals)
 qqline(linear_model$residuals)
 
 ## correlation residuals x-values? 
 cor(df_lm_train$correlation, linear_model$residuals)
-plot(df_lm_train$correlation, linear_model$residuals, pch = 20)
+plot(df_lm_train$correlation, linear_model$residuals, pch = 20, main = "Visualizing correlation", ylab = "Residuals", xlab = "explanatory varaible")
 ```
 The residuals seem to be quite normally distributed with mean = 0. They also seem to be not correlated at all with the explanatory variable (correlation between Ctrl and RNase conditions).
 
@@ -1585,16 +1543,14 @@ df_lm_predict <- as.data.frame(cbind(df_lm_test$shift, pm$fit))
 ```
 
 ```{r}
-plot(
-  df_lm_predict$V1,
-  df_lm_predict$fit,
-  pch = 20,
-  col = 'blue',
-  xlab = 'Real values',
-  ylab = 'Predicted values'
-); abline(0, 1, col = "blue", lwd = 5)
+ggplot(df_lm_predict, aes(x = V1, y = fit)) +
+  geom_point() +
+  geom_abline(col = "blue", lwd = 2) +
+  ggtitle("Real values vs. predicted values") +
+  xlab("Real values") + ylab("Predicted values")
 ```
-!!! Model describes left shift very good, but right shifts not !!!
+
+!!! Model describes left shifts well, but right shifts not !!!
 
 We can also try to evaluate how accurate our model is by having a look at the confidence intervals.
 ```{r}
@@ -1615,7 +1571,6 @@ We can also have a look at the standard errors for every prediction.
 mean(pm$se.fit)
 ```
 
-
 ## same model but absolut shift values
 
 ```{r}
@@ -1635,14 +1590,14 @@ summary(linear_model_ab)
 
 ```{r}
 # normal distribution of residuals? 
-hist(linear_model_ab$residuals, breaks = 20)
+hist(linear_model_ab$residuals, breaks = 20, main = "Histogram of residuals", xlab = "Residuals")
 
 qqnorm(linear_model_ab$residuals)
 qqline(linear_model_ab$residuals)
 
 ## correlation residuals x-values? 
 cor(df_lm_train_ab$correlation, linear_model_ab$residuals)
-plot(df_lm_train_ab$correlation, linear_model_ab$residuals, pch = 20)
+plot(df_lm_train_ab$correlation, linear_model_ab$residuals, pch = 20, main = "Visualizing correlation", ylab = "Residuals", xlab = "explanatory varaible")
 ```
 
 ```{r}
@@ -1652,14 +1607,11 @@ df_lm_predict_ab <- as.data.frame(cbind(df_lm_test_ab$shift, pm_ab$fit))
 ```
 
 ```{r}
-plot(
-  df_lm_predict_ab$V1,
-  df_lm_predict_ab$fit,
-  pch = 20,
-  col = 'blue',
-  xlab = 'Real values',
-  ylab = 'Predicted values'
-); abline(0, 1, col = "blue", lwd = 5)
+ggplot(df_lm_predict_ab, aes(x = V1, y = fit)) +
+  geom_point() +
+  geom_abline(col = "blue", lwd = 2) +
+  ggtitle("Real values vs. predicted values") +
+  xlab("Real values") + ylab("Predicted values")
 ```
 
 ```{r}
@@ -1676,6 +1628,112 @@ counter / nrow(df_lm_predict_ab) * 100
 
 ```{r}
 mean(pm_ab$se.fit)
+```
+
+## more regression models
+
+regression model: using differences between ctrl and rnase conditions
+
+```{r}
+# train linear model
+linear_model <- lm(ab_shift ~ correlation + dif, data = df_lm_train)
+summary(linear_model)
+```
+
+```{r}
+# normal distribution of residuals? 
+hist(linear_model$residuals, breaks = 20)
+
+qqnorm(linear_model$residuals)
+qqline(linear_model$residuals)
+
+## correlation residuals x-values? 
+cor(df_lm_train$dif, linear_model$residuals)
+plot(df_lm_train$dif, linear_model$residuals, pch = 20)
+```
+
+```{r}
+pm <- predict.lm(linear_model, newdata = df_lm_test, se.fit = TRUE, interval = "confidence")
+
+df_lm_predict <- as.data.frame(cbind(df_lm_test$ab_shift, pm$fit))
+```
+
+```{r}
+plot(
+  df_lm_predict$V1,
+  df_lm_predict$fit,
+  pch = 20,
+  col = 'blue',
+  xlab = 'Real values',
+  ylab = 'Predicted values'
+); abline(0, 1, col = "blue", lwd = 5)
+```
+
+## comparison with data bases
+
+Finally, we want to compare our results with given results (e.g. databases)
+```{r}
+df_rdeep <- readRDS("RDeeP_HeLa_Mitosis_rdeep.rds")
+
+rdeep <- rownames(df_rdeep)
+non_rdeep <- rownames(df_normalized)[-df_rdeep$index]
+```
+
+```{r}
+load("HS_non_RBPs.RData")
+load("HS_RBPs.RData")
+```
+
+
+```{r}
+# number of our RDeePs which are RBPs
+counter <- 0
+
+for (i in rdeep) {
+  if (i %in% HS_RBPs$Entry_Name.x) {
+    counter <- counter + 1
+  }
+}
+counter
+```
+
+```{r}
+# number of our RDeePs which are non RBPs
+
+counter <- 0
+
+for (i in rdeep) {
+  if (i %in% HS_non_RBPs$Entry_Name.x) {
+    counter <- counter + 1
+  }
+}
+counter
+```
+
+```{r}
+# number of our non RDeePs which are RBPs
+
+counter <- 0
+
+for (i in non_rdeep) {
+  if (i %in% HS_RBPs$Entry_Name.x) {
+    counter <- counter + 1
+  }
+}
+counter
+```
+
+```{r}
+# number of our non RDeePs which are non RBPs
+
+counter <- 0
+
+for (i in non_rdeep) {
+  if (i %in% HS_non_RBPs$Entry_Name.x) {
+    counter <- counter + 1
+  }
+}
+counter
 ```
 
 ## comparison with local maxima
@@ -1728,58 +1786,4 @@ x2 <- c(intersect(shift_proteins_l, sig_dif_proteins_rep))
 
 x3 <- c(x1, x2)
 length(unique(x3))
-```
-
-
-## comparison with data bases
-
-```{r}
-df_rdeep <- readRDS("RDeeP_HeLa_Mitosis_rdeep.rds")
-
-rdeep <- rownames(df_rdeep)
-non_rdeep <- rownames(df_normalized)[-df_rdeep$index]
-```
-
-```{r}
-counter <- 0
-
-for (i in rdeep) {
-  if (i %in% HS_RBPs$Entry_Name.x) {
-    counter <- counter + 1
-  }
-}
-counter
-```
-
-```{r}
-counter <- 0
-
-for (i in rdeep) {
-  if (i %in% HS_non_RBPs$Entry_Name.x) {
-    counter <- counter + 1
-  }
-}
-counter
-```
-
-```{r}
-counter <- 0
-
-for (i in non_rdeep) {
-  if (i %in% HS_RBPs$Entry_Name.x) {
-    counter <- counter + 1
-  }
-}
-counter
-```
-
-```{r}
-counter <- 0
-
-for (i in non_rdeep) {
-  if (i %in% HS_non_RBPs$Entry_Name.x) {
-    counter <- counter + 1
-  }
-}
-counter
 ```
