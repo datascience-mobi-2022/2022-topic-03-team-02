@@ -1,0 +1,23 @@
+---
+title: "12.07. Tut"
+author: "Basti"
+date: '2022-07-12'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Accuracy und Recall berechnen für unser programm um bisschen zu vergleichen
+
+Was soll in das readme?
+->  Allgemein: Worum geht es im Projekt? Was macht welches file? Wie kann man unsere analyse 1:1 wiederholen? Ergebnis?
+Wenn jemand unser repo entdeckt soll er verstehen was wofür ist?
+Randomisieren von linearer Regression wichtig! Wegen ähnlichen Proteinen mit ähnlichen Namen
+
+Report nur im GitHub keine Mails
+
+Präsi:
+Projekt gesamt erklären mit bio background dann die wichtigsten schritte der analyse, nicht jeden schritt einzeln erklären sondern nur relevanteste, data cleaning nicht so relevant, lineare regression interessant, selection criteria für rbp erklären, clustering erklären, conclusion, wie gut waren wir?, was hätte man besser machen können mit mehr zeit/aufwand? Conclusion: biologische relevanz unserer ergebnisse? Was kann man daraus ziehen oder damit anfangen?
+15min präsi
