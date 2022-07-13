@@ -12,6 +12,11 @@ bibliography: references.bib
 csl: citationstyle.csl
 
 ---
+<style>
+p.caption {
+  font-size: 0.6em;
+}
+</style>
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -76,13 +81,11 @@ In theory - all other things being equal - replicating the same experiment three
 
 Furthermore, since all proteins investigated in our data set naturally show a heterogeneous expression level in living cells, it was necessary to perform an additional row-wise normalization step to ensure comparability between different proteins. For this purpose, we set the protein amount to be 100 for each replicate in each condition. After this step, the sum of the protein amount across all 25 fractions was equal to 100 for each replicate. In other words, normalizing our data changed the absolute protein levels for each fraction while the protein amount in each fraction relative to the total protein amount across all fractions stayed the same.
 
-Next, we wanted to evaluate the reproducibility of our data. For this purpose, we computed the correlation (Pearson) between replicates within each condition in all possible combinations (for example, correlation between control replicate 1 and 2, 1 and 3 and 2 and 3). This allowed us to sort out single proteins whose data did not seem to be reproducible. We defined a threshold correlation value below which the data for given proteins was regarded as non-reproducible. For this purpose, we looked at the number of proteins we would have to discard for each threshold level between 0 and 0.8 in 0.05 steps:
-
-```{r echo=FALSE, cache=FALSE}
-
-plot(seq(0, 0.8, 0.05), readRDS("tres_values.rds"), type = "b", xlab = "threshold value", ylab = "number of removed proteins", main = "")
-
-abline(v = 0.6, col = "red", lwd = 1, lty = 2)
+Next, we wanted to evaluate the reproducibility of our data. For this purpose, we computed the correlation (Pearson) between replicates within each condition in all possible combinations (for example, correlation between control replicate 1 and 2, 1 and 3 and 2 and 3). This allowed us to sort out single proteins whose data did not seem to be reproducible. We defined a threshold correlation value below which the data for given proteins was regarded as non-reproducible. For this purpose, we looked at the number of proteins we would have to discard for each threshold level between 0 and 0.8 in 0.05 steps (Figure 1).
+```{r, echo=FALSE, out.width="100%", fig.align = "center", fig.show='hold', fig.cap="Number of discarded proteins dependent on the chosen threshold level. Proteins whose correlation is lower than the given threshold level are removed from the data set. One can observe a kink for a threshold level of around 0.6."}
+knitr::include_graphics(
+  c("C:/Users/lenna/OneDrive/Dokumente/2022-topic-03-team-02/report/images/Reproducibility.png")
+)
 ```
 
 Considering this, we identified a threshold level of 0.6 as a good compromise between choosing a preferably high threshold level on the one hand and avoiding to remove too many proteins from our data set on the other. This led to the removal of another 25 proteins from our data set. Therefore, we removed a total of 32 proteins from our data set, which amounts to around 0.5% of all proteins from our native data set.
@@ -99,10 +102,10 @@ Significance of difference in protein amount was tested using a Student's t-test
 
 ## **2.3 Performing Dimension Reduction Analysis**
 In this step of our analysis, we looked at a data set that, for a given protein, combine all three replicates of a given condition using the mean value method, meaning that each protein can be characterized by fifty values - 25 mean protein amount values from control and 25 mean protein amount values from RNase.Thus, each protein from our data set can be depicted as a point in a fifty-dimensional space. Here, in order to identify directions in the data corresponding to biological effects, we sought to transform our data from this high-dimensional space into a lower-dimensional space with fewer relevant variables while retaining as much variance in our data as possible. For this purpose, we performed principal component analysis (PCA) on our data set using the built-in function `prcomp`, followed by Uniform Manifold Approximation and Projection (UMAP) analysis using the function `umap`. 
-Subsequently, we colored proteins according to their shifting behavior, once with respect to whether or not they show a shift at all and once furhter differentiating between left shifting, right shifting and not shifting proteins. Left shifting proteins were defined as proteins whose maximum shifted towards smaller fractions between control and RNase condition as determined in part 2.2, i. e. proteins whose real shift in position of the global maximum was negative. Similarly, right shifting proteins showed a shift in position of the global maximum towards higher fractions, and not shifting proteins a real shift of zero.
+Subsequently, we colored proteins according to previously-determined features, once with respect to their RNA-dependence status and once with respect to their shifting behavior, further differentiating between left shifting, right shifting and not shifting proteins. Left shifting proteins were defined as proteins whose maximum shifted towards smaller fractions between control and RNase condition as determined in part 2.2, i. e. proteins whose real shift in position of the global maximum was negative. Similarly, right shifting proteins showed a shift in position of the global maximum towards higher fractions, and not shifting proteins a real shift of zero.
 
 ## **2.4 Developing a Linear Regression Model**
-Last, for all proteins included in our data set, we sought to develop a linear regression model that features variables from our previous analysis steps. Here, we tried to predict the absolute and real shift in position of the global maximum using the correlation between the mean protein amount values between control and RNase for each given protein. This approach is based on the rationale that proteins with low correlation between control and RNase are expected to show distinct alterations in the distribution of protein amount values across all 25 fractions between both conditions, which in turn may increase the chance for a protein to show a shifting behavior by our definitions as stated above.
+Last, for all proteins included in our data set, we sought to develop a linear regression model that features variables from our previous analysis steps. Here, we tried to predict the absolute and the real shift in position of the global maximum using the correlation between the mean protein amount values between control and RNase for each given protein. This approach is based on the rationale that proteins with low correlation between control and RNase are expected to show distinct alterations in the distribution of protein amount values across all 25 fractions between both conditions, which in turn may increase the chance for a protein to show a shifting behavior by our definitions as stated above.
 For that purpose, we randomly split our data set so that 80% of all proteins included served to train our model while the remaining 20% were used to test it. We used the built-in function `lm` to do the training and `lm.predict` for the purpose of testing.
 
 - absoluter versus realer shift durch korrelation zwischen kombinierten 
@@ -127,22 +130,29 @@ According to aforementioned methods and criteria, we computed the RNA-dependence
 
 ## **3.2 Performing Dimension Reduction Analysis**
 Dimension reduction analysis was performed by aforementioned methods and proteins colored according to their shifting behavior (Figure 2).
-```{r, echo=FALSE, out.width="49%", fig.align = "center", fig.show='hold', fig.cap="Test"}
+```{r, echo=FALSE, out.width="49%", fig.align = "center", fig.show='hold', fig.cap="PCA and subsequent UMAP analysis applied to our normalized and mean-combined data set. Left: proteins colored to their RNA-dependence status; Right: proteins colored to their shifting behaviors. Overplotting was reduced by increasing transparency for each point in the scatter plot."}
 knitr::include_graphics(
-  c("C:/Users/lenna/OneDrive/Dokumente/2022-topic-03-team-02/report/images/UMAP.png",
-    "C:/Users/lenna/OneDrive/Dokumente/2022-topic-03-team-02/report/images/UMAP.png")
+  c("C:/Users/lenna/OneDrive/Dokumente/2022-topic-03-team-02/report/images/UMAP_sns.png","C:/Users/lenna/OneDrive/Dokumente/2022-topic-03-team-02/report/images/UMAP_lrn.png")
 )
 ```
-Here, it can be seen that proteins with the same shifting behavior generally tend to organize themselves into regionally distinct groups in this low-dimensional representation. Importantly, these findings suggest that there exists an underlying structure that seems to be valid even outside of our arbitrarily-defined groups of shifting behaviors.
+Here, it can be seen that proteins with the same shifting behavior generally tend to organize themselves into regionally distinct groups in this low-dimensional representation. Expectedly, these findings suggest that there may exist an underlying group-like structure in our data set that seems to be valid even outside of our arbitrarily-defined groups of shifting behaviors. In other words, depicting proteins as done here is visual evidence that clustering proteins by shifting behavior may be a good choice for identifying sub-structures in our data set because it is based upon immanent groups of proteins in a low-dimensional space.
+As a follow-up analysis, we took a closer look at the distribution of shifting behaviors in our data set in order to identify directions in the data that may point towards corresponding biological effects. For that purpose, we plotted the position of the global maximum in control against the global maximum in RNase using our results from analysis part 2.2 (Figure 3).  
+```{r, echo=FALSE, out.width="100%", fig.align = "center", fig.show='hold', fig.cap="Position of global maximum in control against position of global maximum in RNase. For each observable shift, the number of proteins $n$ that display this specific shift is represented by the size of the points."}
+knitr::include_graphics(
+  c("C:/Users/lenna/OneDrive/Dokumente/2022-topic-03-team-02/report/images/shiftingbehaviors.png")
+)
+```
+Notably, this representation visualizes that there exist almost no proteins that show a drastic right shift -  i. e. a shift towards higher fractions between control an RNase - while the latter can be observed for left-shifting proteins. Referring back to the introduction, we know that in density gradient centrifugation, macromolecules are forced through a density gradient until they find a density equal to their own (Farrell, 2010), and that thereby the rate of sedimentation depends, among others, on size, shape and density of the macromolecules (Raschke et al., 2009). Therefore, these findings suggest that, generally speaking, there may exist a tendency for proteins to experience a loss in density and/or conformational changes that are unfavorable for migration in a density gradient, i. e. slow down the rate of sedimentation, as a result of RNase treatment.
 
-- Result: Es bilden sich zusammengehlrige Gruppen! 
-
-
-- "Tröpfchenplot"
-- Plot: no shift/shift und left/right/no nebeneinander!
-
-- kmeans auf shift gemacht und wenn PLatz einfügen
 \newpage
+## **3.3 Developing a Linear Regression Model**
+Linear regression was performed using aforementioned methods and functions. First, we sought to predict the real values in shift of the maxima between control and RNase using the correlation values computed earlier.
+```{r, echo=FALSE, out.width="49%", fig.align = "center", fig.show='hold', fig.cap="1."}
+knitr::include_graphics(
+  c("C:/Users/lenna/OneDrive/Dokumente/2022-topic-03-team-02/report/images/lm1.png", 'C:/Users/lenna/OneDrive/Dokumente/2022-topic-03-team-02/report/images/lm2.png')
+)
+```
+
 
 # **4. Discussion**
 
