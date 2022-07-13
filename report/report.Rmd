@@ -94,7 +94,7 @@ Last, for each protein and condition, all three replicates were combined into a 
 
 ## **2.2 Identification of RNA-dependent proteins**
 
-As mentioned earlier, RNA-dependent proteins are expected to show an altered migration pattern in a sucrose density gradient after ultracentrifugation in the presence or absence of RNA. After performing aforementioned preliminary steps, we set to identify possible RNA-dependent proteins by interpreting this altered migration pattern, that is the distribution of normalized protein amount values across all 25 fractions for both conditions, control and RNase. For this it was necessary to define selection criteria proteins have to fulfill in order to qualify as RNA-dependent. Here, proteins are considered RNA-dependent when (i) the position of the global maximum of the protein amount across all 25 fractions shows an absolute shift between control and RNase of 1 fraction or greater, and (ii) there is a significant difference in protein amount between the position of the global maxima in control and the protein amount at the respective fractions in RNase. This meant that first, we had to identify the global maximum for each protein in control and RNase condition, so that subsequently we could test for shift in position of the global maximum and significance of difference in protein amount.
+As mentioned earlier, RNA-dependent proteins are expected to show an altered migration pattern in a sucrose density gradient after ultracentrifugation in the presence or absence of RNA. After performing aforementioned preliminary steps, we set to identify possible RNA-dependent proteins by interpreting this altered migration pattern, that is the distribution of normalized protein amount values across all 25 fractions for both conditions, control and RNase. For this it was necessary to define selection criteria proteins have to fulfill in order to qualify as RNA-dependent. Here, proteins are considered RNA-dependent when ($a$) the position of the global maximum of the protein amount across all 25 fractions shows an absolute shift between control and RNase of 1 fraction or greater, and ($b$) there is a significant difference in protein amount between the position of the global maxima in control and the protein amount at the respective fractions in RNase. This meant that first, we had to identify the global maximum for each protein in control and RNase condition, so that subsequently we could test for shift in position of the global maximum and significance of difference in protein amount.
 
 For the purpose of determining the shift in position of the global maximum, we used aforementioned vectors that combine all three replicates of a given condition using the mean value method. Global maxima for all proteins were then identified by determining the greatest value of protein amount across all 25 fractions for a given protein. This resulted in two values, the averaged position of the global maximum in control and the averaged position of the global maximum in RNase, which were used to calculate the absolute and real magnitude of the shift.
 
@@ -113,11 +113,6 @@ For that purpose, we randomly split our data set so that 80% of all proteins inc
 
 
 - precision recall 
-
-\newpage
-
-## **2.5 Validating Our Results**
-
 \newpage
 
 # **3. Results**
@@ -146,12 +141,29 @@ Notably, this representation visualizes that there exist almost no proteins that
 
 \newpage
 ## **3.3 Developing a Linear Regression Model**
-Linear regression was performed using aforementioned methods and functions. First, we sought to predict the real values in shift of the maxima between control and RNase using the correlation values computed earlier.
-```{r, echo=FALSE, out.width="49%", fig.align = "center", fig.show='hold', fig.cap="1."}
+Linear regression was performed using aforementioned methods and functions. First, we sought to predict the real values in shift of the maxima between control and RNase using the correlation values computed earlier (Figure 4).
+```{r, echo=FALSE, out.width="49%", fig.align = "center", fig.show='hold', fig.cap=""}
 knitr::include_graphics(
   c("C:/Users/lenna/OneDrive/Dokumente/2022-topic-03-team-02/report/images/lm1.png", 'C:/Users/lenna/OneDrive/Dokumente/2022-topic-03-team-02/report/images/lm2.png')
 )
 ```
+Using these findings, we could assess whether or not our linear model serves well in modelling the relationship between real values in shift and correlation. Most importantly, one can observe a p-value of the F-test of $p < 2.2*10^{-16}$, meaning that for a given $\alpha$ of $\alpha < 0.05$ our regression model is significantly better than the null-model, i. e. a regression model where for a given correlation the real values in shift are simply predicted as the mean of all real shifting values used to train the model. Likewise, since both p-values are significant ($p < 2*10^{-16}$), we can exclude that both intercept and slope of our model are actually equal to zero. However, our model could only reach a coefficient of determination ($R^2$) of around 0.6, meaning that only around 60% of the total variance in the dependent variable is explained by our regression model.
+Furthermore, judging by the way the regression line is located in the data cloud (Figure 4, right), it can be said that our model serves well in describing left shifts but does only a poor job in describing right ones.
+As a follow-up quality assessment, we tested whether or not the assumption that the relationship between the real values in shift and correlation is linear was actually valid to make. For that purpose, we looked at different properties of the residuals (Figure 5).
+```{r, echo=FALSE, out.width="32%", fig.align = "center", fig.show='hold', fig.cap="Graphical representation of different properties of the resiudals from our linear model. Left: histogram of residuals; note that the mean value is zero. Middle: Q-Q plot plotting quantiles of the distribution of our residuals against those of a normal distribution to assess distribution of residuals. Right: scatter plot displaying residuals against our explanatory variable (correlation)."}
+knitr::include_graphics(
+  c("C:/Users/lenna/OneDrive/Dokumente/2022-topic-03-team-02/report/images/residuals1.png", 'C:/Users/lenna/OneDrive/Dokumente/2022-topic-03-team-02/report/images/residuals2.png', 'C:/Users/lenna/OneDrive/Dokumente/2022-topic-03-team-02/report/images/residuals3.png')
+)
+```
+Using these findings, we conclude that the linearity assumption is valid since our residuals ($a$) show a mean value of zero, ($b$) are approximately normally distributed and ($c$) do not correlate with our explanatory variable ($corr = 4.958122*10^{-16}$).
+Last, having trained our model and tested its validity, we wanted to assess its performance in predicting real values in shift using correlation values for a given protein using the remaining 20% of our data set. For that purpose, we used the built-in function `lm.predict` to test in what fraction of cases the real value in shift happens to be within the 95 percent confidence interval as predicted by our model. In that way we computed that our model was accurate only in around 6% of cases.
+Because of that - and because this first model showed a tendency to preferably explain left shifts but not right ones - we developed another regression model that sought to predict not the real but the absolute value in shift from correlation, all else being equal (Figure 6).
+```{r, echo=FALSE, out.width="49%", fig.align = "center", fig.show='hold', fig.cap=""}
+knitr::include_graphics(
+  c("C:/Users/lenna/OneDrive/Dokumente/2022-topic-03-team-02/report/images/lm3.png", 'C:/Users/lenna/OneDrive/Dokumente/2022-topic-03-team-02/report/images/lm4.png')
+)
+```
+Again, we can find that this model serves significantly better in predicting absolute values in shift than the null-model (p-value of F-test < $2.2*10^{-16}$). Assuming linearity was found to be valid by aforementioned methods. However, while having a very similar coefficient of determination ($R^2 = 0.6466$), we found that this model using absolute values in shift rather than real ones was more accurate in predicting values in shift for new proteins in that the predicted values were found to lie within the 95 percent confidence interval in around 20% of cases.
 
 
 # **4. Discussion**
