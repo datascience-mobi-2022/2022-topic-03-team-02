@@ -98,7 +98,7 @@ As mentioned earlier, RNA-dependent proteins are expected to show an altered mig
 
 For the purpose of determining the shift in position of the global maximum, we used aforementioned vectors that combine all three replicates of a given condition using the mean value method. Global maxima for all proteins were then identified by determining the greatest value of protein amount across all 25 fractions for a given protein. This resulted in two values, the averaged position of the global maximum in control and the averaged position of the global maximum in RNase, which were used to calculate the absolute and real magnitude of the shift.
 
-Significance of difference in protein amount was tested using a Student's t-test. Here, for every given protein, we first determined the global maximum for each replicate in control, yielding a vector containing the magnitude and the respective fraction of each maximum. Subsequently, protein amount values at the respective fractions in RNase were determined, yielding a second vector containing protein amount values at the respective fractions. We then tested whether protein amount values from the first vector significantly differed from those of the second vector and thus tested significance of difference in protein amount for each protein in our data set, leading to a total of 7127 t-tests performed. P-values were corrected for multiple testing by controlling the false-discovery rate (FDR) according to @benjamini1995controlling, using the function `p.adjust`. Therefore, difference in protein amount was regarded as significant if the FDR-corrected p-value $p$ was smaller than the chosen significance level of $\alpha=0.05$. 
+Significance of difference in protein amount was tested using a Student's $t$-test. Here, for every given protein, we first determined the global maximum for each replicate in control, yielding a vector containing the magnitude and the respective fraction of each maximum. Subsequently, protein amount values at the respective fractions in RNase were determined, yielding a second vector containing protein amount values at the respective fractions. We then tested whether protein amount values from the first vector significantly differed from those of the second vector and thus tested significance of difference in protein amount for each protein in our data set, leading to a total of 7127 $t$-tests performed. P-values were corrected for multiple testing by controlling the false-discovery rate (FDR) according to @benjamini1995controlling, using the function `p.adjust`. Therefore, difference in protein amount was regarded as significant if the FDR-corrected p-value $p$ was smaller than the chosen significance level of $\alpha=0.05$. 
 
 ## **2.3 Performing Dimension Reduction Analysis**
 In this step of our analysis, we looked at a data set that, for a given protein, combine all three replicates of a given condition using the mean value method, meaning that each protein can be characterized by fifty values - 25 mean protein amount values from control and 25 mean protein amount values from RNase.Thus, each protein from our data set can be depicted as a point in a fifty-dimensional space. Here, in order to identify directions in the data corresponding to biological effects, we sought to transform our data from this high-dimensional space into a lower-dimensional space with fewer relevant variables while retaining as much variance in our data as possible. For this purpose, we performed principal component analysis (PCA) on our data set using the built-in function `prcomp`, followed by Uniform Manifold Approximation and Projection (UMAP) analysis using the function `umap`. 
@@ -117,11 +117,19 @@ For that purpose, we randomly split our data set so that 80% of all proteins inc
 
 # **3. Results**
 
-## **3.1 RNA-dependent proteins**
-According to aforementioned methods and criteria, we computed the RNA-dependence status for all 7127 still included in our data set and identified a total of 657 as RNA-dependent, which amounts to around 9.2% of all proteins tested.
+## **3.1 Identification of RNA-dependent proteins**
+According to aforementioned methods and criteria, we computed the RNA-dependence status for all 7127 still included in our data set. Here, we found 1320 proteins that only fulfilled the first criterion (shift) for proteins to qualify as RNA-dependent and 1547 proteins that exclusively fulfilled the second criterion (significant $t$-test) but not the first one. The intersection between both groups amounted to 657 proteins, i.e. we identified a total of 657 as RNA-dependent, which makes up around 9.2% of all proteins tested.
+```{r, echo=FALSE}
+library(knitr)
 
+row <- c("RBP","Non-RBP", "Sum")
+df <- data.frame(c(562, 91, 562+91), c(3961, 2460, 3961+2460), c(562+3961, 91+2460, 7074), row.names = row)
+colnames(df) = c("R-Deep", "Non-R-Deep","Sum")
 
+kable(df, caption = "Test")
+```
 - Precision, recall 
+$\Sigma$
 
 ## **3.2 Performing Dimension Reduction Analysis**
 Dimension reduction analysis was performed by aforementioned methods and proteins colored according to their shifting behavior (Figure 2).
@@ -142,7 +150,7 @@ Notably, this representation visualizes that there exist almost no proteins that
 \newpage
 ## **3.3 Developing a Linear Regression Model**
 Linear regression was performed using aforementioned methods and functions. First, we sought to predict the real values in shift of the maxima between control and RNase using the correlation values computed earlier (Figure 4).
-```{r, echo=FALSE, out.width="49%", fig.align = "center", fig.show='hold', fig.cap=""}
+```{r, echo=FALSE, out.width="49%", fig.align = "center", fig.show='hold', fig.cap="Left: summary of key parameters of the first regression model. Right: real values in shift as predicted by the first regression model in comparison to the values computed by our analysis. Note that our model does only a poor job in predicting real values in shift for right shifting proteins."}
 knitr::include_graphics(
   c("C:/Users/lenna/OneDrive/Dokumente/2022-topic-03-team-02/report/images/lm1.png", 'C:/Users/lenna/OneDrive/Dokumente/2022-topic-03-team-02/report/images/lm2.png')
 )
@@ -158,7 +166,7 @@ knitr::include_graphics(
 Using these findings, we conclude that the linearity assumption is valid since our residuals ($a$) show a mean value of zero, ($b$) are approximately normally distributed and ($c$) do not correlate with our explanatory variable ($corr = 4.958122*10^{-16}$).
 Last, having trained our model and tested its validity, we wanted to assess its performance in predicting real values in shift using correlation values for a given protein using the remaining 20% of our data set. For that purpose, we used the built-in function `lm.predict` to test in what fraction of cases the real value in shift happens to be within the 95 percent confidence interval as predicted by our model. In that way we computed that our model was accurate only in around 6% of cases.
 Because of that - and because this first model showed a tendency to preferably explain left shifts but not right ones - we developed another regression model that sought to predict not the real but the absolute value in shift from correlation, all else being equal (Figure 6).
-```{r, echo=FALSE, out.width="49%", fig.align = "center", fig.show='hold', fig.cap=""}
+```{r, echo=FALSE, out.width="49%", fig.align = "center", fig.show='hold', fig.cap="Left: summary of key parameters of the second regression model. Right: real values in shift as predicted by the second regression model in comparison to the values computed by our analysis."}
 knitr::include_graphics(
   c("C:/Users/lenna/OneDrive/Dokumente/2022-topic-03-team-02/report/images/lm3.png", 'C:/Users/lenna/OneDrive/Dokumente/2022-topic-03-team-02/report/images/lm4.png')
 )
