@@ -67,8 +67,6 @@ Here, triplicates of native (control) and RNase-treated cell lysates from HeLa c
 
 In this report, we seek to draw a qualified conclusion about the RNA-dependence status of the 7160 proteins investigated in the provided data set using bioinformatics and statistics. For this purpose, we will define criteria and parameters the given proteins need to fulfill to qualify as RNA-dependent, and will evaluate our given data with respect to aforementioned aspects using the programming language R. Eventually, we will discuss the significance and possible limitations of our methods and findings.
 
-\newpage
-
 # **2. Methods**
 
 ## **2.1 Preliminary Steps**
@@ -82,7 +80,7 @@ In theory - all other things being equal - replicating the same experiment three
 Furthermore, since all proteins investigated in our data set naturally show a heterogeneous expression level in living cells, it was necessary to perform an additional row-wise normalization step to ensure comparability between different proteins. For this purpose, we set the protein amount to be 100 for each replicate in each condition. After this step, the sum of the protein amount across all 25 fractions was equal to 100 for each replicate. In other words, normalizing our data changed the absolute protein levels for each fraction while the protein amount in each fraction relative to the total protein amount across all fractions stayed the same.
 
 Next, we wanted to evaluate the reproducibility of our data. For this purpose, we computed the correlation (Pearson) between replicates within each condition in all possible combinations (for example, correlation between control replicate 1 and 2, 1 and 3 and 2 and 3). This allowed us to sort out single proteins whose data did not seem to be reproducible. We defined a threshold correlation value below which the data for given proteins was regarded as non-reproducible. For this purpose, we looked at the number of proteins we would have to discard for each threshold level between 0 and 0.8 in 0.05 steps (Figure 1).
-```{r, echo=FALSE, out.width="100%", fig.align = "center", fig.show='hold', fig.cap="Number of discarded proteins dependent on the chosen threshold level. Proteins whose correlation is lower than the given threshold level are removed from the data set. One can observe a kink for a threshold level of around 0.6."}
+```{r, echo=FALSE, out.width="70%", fig.align = "center",fig.cap="Number of discarded proteins dependent on the chosen threshold level. Proteins whose correlation is lower than the given threshold level are removed from the data set. One can observe a kink for a threshold level of around 0.6."}
 knitr::include_graphics(
   c("C:/Users/lenna/OneDrive/Dokumente/2022-topic-03-team-02/report/images/Reproducibility.png")
 )
@@ -108,17 +106,15 @@ Subsequently, we colored proteins according to previously-determined features, o
 Last, for all proteins included in our data set, we sought to develop a linear regression model that features variables from our previous analysis steps. Here, we tried to predict the absolute and the real shift in position of the global maximum using the correlation between the mean protein amount values between control and RNase for each given protein. This approach is based on the rationale that proteins with low correlation between control and RNase are expected to show distinct alterations in the distribution of protein amount values across all 25 fractions between both conditions, which in turn may increase the chance for a protein to show a shifting behavior by our definitions as stated above.
 For that purpose, we randomly split our data set so that 80% of all proteins included served to train our model while the remaining 20% were used to test it. We used the built-in function `lm` to do the training and `lm.predict` for the purpose of testing.
 
-- absoluter versus realer shift durch korrelation zwischen kombinierten 
-- residuals etc. bewiesen 
-
-
-- precision recall 
-\newpage
-
 # **3. Results**
 
 ## **3.1 Identification of RNA-dependent proteins**
 According to aforementioned methods and criteria, we computed the RNA-dependence status for all 7127 still included in our data set. Here, we found 1320 proteins that only fulfilled the first criterion (shift) for proteins to qualify as RNA-dependent and 1547 proteins that exclusively fulfilled the second criterion (significant $t$-test) but not the first one. The intersection between both groups amounted to 657 proteins, i.e. we identified a total of 657 as RNA-dependent, which makes up around 9.2% of all proteins tested.
+Using the two additional data sets we've been granted, we can check whether the proteins we identified to be RNA-dependent are in fact RNA-binding or not (Table 1).
+\
+\begin{small}
+Table 1: Comparison between the number of RNA-dependent (R-Deep) an non-RNA-dependent proteins (Non-R-Deep) as identified by our analysis and the number of RNA-binding (RBP) or non-RNA-binding proteins (Non-RBP) set to occur in our data set.
+\end{small}
 ```{r, echo=FALSE}
 library(knitr)
 
@@ -126,10 +122,35 @@ row <- c("RBP","Non-RBP", "Sum")
 df <- data.frame(c(562, 91, 562+91), c(3961, 2460, 3961+2460), c(562+3961, 91+2460, 7074), row.names = row)
 colnames(df) = c("R-Deep", "Non-R-Deep","Sum")
 
-kable(df, caption = "Test")
+kable(df)
 ```
-- Precision, recall 
-$\Sigma$
+Because the notion of RNA-dependence embeds that of RNA-binding, we can approximate a number of key performance metrics to assess the quality of our analysis (Table 2).
+\
+\begin{small}
+Table 2: Selection of different performance metrics to evaluate the quality of our analysis. FNR, False Negative Rate; FPR, False Positive Rate; FDR, False Discovery Rate.
+\end{small}
+
+```{r, echo=FALSE}
+library(knitr)
+
+row <- c("False Positives","True Positives", "False Negatives", "True Negatives","")
+
+FP <- 91
+TP <- 562
+FN <- 3961
+TN <- 2460
+FNR <- 3961/(3961+562)
+FPR <- 91/(91+2460)
+FDR <- 91/(562+91)
+Precision <- 562/(562+91)
+Recall <- 562/(3961+562)
+
+df <- data.frame(c("91","562","3961","2460",""),c("","","","",""),c("FNR","FPR","FDR","Precision","Recall"), c("87.6","3.67","13.9","86.1","12.4"), row.names = row)
+colnames(df) = c("Number of Proteins","","    ","Percent")
+
+kable(df) 
+```
+Using these metrics, we can conclude that ($a$) our analysis shows strengths in its relatively high precision, i. e. a relatively high rate by which RNA-dependent proteins as identified by our analysis are in fact RNA-dependent, and that ($b$) our analysis is limited in that it only shows a relatively low recall, i. e. it does only a poor job in retrieving truly RNA-dependent proteins from the set of all RNA-dependent proteins in our data set.
 
 ## **3.2 Performing Dimension Reduction Analysis**
 Dimension reduction analysis was performed by aforementioned methods and proteins colored according to their shifting behavior (Figure 2).
@@ -140,14 +161,13 @@ knitr::include_graphics(
 ```
 Here, it can be seen that proteins with the same shifting behavior generally tend to organize themselves into regionally distinct groups in this low-dimensional representation. Expectedly, these findings suggest that there may exist an underlying group-like structure in our data set that seems to be valid even outside of our arbitrarily-defined groups of shifting behaviors. In other words, depicting proteins as done here is visual evidence that clustering proteins by shifting behavior may be a good choice for identifying sub-structures in our data set because it is based upon immanent groups of proteins in a low-dimensional space.
 As a follow-up analysis, we took a closer look at the distribution of shifting behaviors in our data set in order to identify directions in the data that may point towards corresponding biological effects. For that purpose, we plotted the position of the global maximum in control against the global maximum in RNase using our results from analysis part 2.2 (Figure 3).  
-```{r, echo=FALSE, out.width="100%", fig.align = "center", fig.show='hold', fig.cap="Position of global maximum in control against position of global maximum in RNase. For each observable shift, the number of proteins $n$ that display this specific shift is represented by the size of the points."}
+```{r, echo=FALSE, out.width="70%", fig.align = "center", fig.show='hold', fig.cap="Position of global maximum in control against position of global maximum in RNase. For each observable shift, the number of proteins $n$ that display this specific shift is represented by the size of the points."}
 knitr::include_graphics(
   c("C:/Users/lenna/OneDrive/Dokumente/2022-topic-03-team-02/report/images/shiftingbehaviors.png")
 )
 ```
 Notably, this representation visualizes that there exist almost no proteins that show a drastic right shift -  i. e. a shift towards higher fractions between control an RNase - while the latter can be observed for left-shifting proteins. Referring back to the introduction, we know that in density gradient centrifugation, macromolecules are forced through a density gradient until they find a density equal to their own (Farrell, 2010), and that thereby the rate of sedimentation depends, among others, on size, shape and density of the macromolecules (Raschke et al., 2009). Therefore, these findings suggest that, generally speaking, there may exist a tendency for proteins to experience a loss in density and/or conformational changes that are unfavorable for migration in a density gradient, i. e. slow down the rate of sedimentation, as a result of RNase treatment.
 
-\newpage
 ## **3.3 Developing a Linear Regression Model**
 Linear regression was performed using aforementioned methods and functions. First, we sought to predict the real values in shift of the maxima between control and RNase using the correlation values computed earlier (Figure 4).
 ```{r, echo=FALSE, out.width="49%", fig.align = "center", fig.show='hold', fig.cap="Left: summary of key parameters of the first regression model. Right: real values in shift as predicted by the first regression model in comparison to the values computed by our analysis. Note that our model does only a poor job in predicting real values in shift for right shifting proteins."}
@@ -172,7 +192,6 @@ knitr::include_graphics(
 )
 ```
 Again, we can find that this model serves significantly better in predicting absolute values in shift than the null-model (p-value of F-test < $2.2*10^{-16}$). Assuming linearity was found to be valid by aforementioned methods. However, while having a very similar coefficient of determination ($R^2 = 0.6466$), we found that this model using absolute values in shift rather than real ones was more accurate in predicting values in shift for new proteins in that the predicted values were found to lie within the 95 percent confidence interval in around 20% of cases.
-
 
 # **4. Discussion**
 
