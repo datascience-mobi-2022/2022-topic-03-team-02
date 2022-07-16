@@ -4,7 +4,6 @@
 .Ruserdata
 .DS_store
 RDeeP_HeLa_Mitosis.csv
-report.out
 DeeP_HeLa_Mitosis_normalized.rds
 RDeeP_HeLa_Mitosis_normalized.rds
 DeeP_HeLa_Mitosis_normalized_combined.rds
