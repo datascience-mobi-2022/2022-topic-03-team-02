@@ -17,3 +17,4 @@ tres_values.rds
 *.RData
 part*
 ~$*
+report.out
