@@ -17,7 +17,7 @@ All of our analysis steps can be found in the file *analysis_rdeep.Rmd* located 
 1. Preliminary steps (data cleaning and normalization)
 2. Identifying RNA-dependent proteins
 3. Dimension reduction analysis (PCA and UMAP)
-4. Developing linear regression model
+4. Developing a linear regression model to predict shifts
 <br>
 
 The report can be found as *Topic03_Team02.pdf* and *Topic03_Team02.Rmd* files in the *report* folder and includes an introduction, methods, results and a discussion next to the analysis steps. Furthermore, our GitHub repository includes a folder containing all files regarding the project proposal (*project proposal*) and the final presentation (*finalpresentation*). 
