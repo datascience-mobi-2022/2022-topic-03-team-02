@@ -156,7 +156,7 @@ Using these metrics, we can conclude that ($a$) our analysis shows strengths in 
 
 ## **3.2 Performing Dimension Reduction Analysis**
 Dimension reduction analysis was performed by aforementioned methods and proteins colored according to their shifting behavior (Figure 2).
-```{r, echo=FALSE, out.width="49%", fig.align = "center", fig.show='hold', fig.cap="PCA and subsequent UMAP analysis applied to our normalized and mean-combined data set. Left: proteins colored to their RNA-dependence status; Right: proteins colored to their shifting behaviors. Overplotting was reduced by increasing transparency for each point in the scatter plot."}
+```{r, echo=FALSE, out.width="49%", fig.align = "center", fig.show='hold', fig.cap="PCA and subsequent UMAP analysis applied to our normalized and mean-combined data set. Left: proteins colored to their RNA-dependence status; Right: proteins colored to their shifting behaviors. Overplotting was reduced by increasing transparency for non-R-DeePs (red) in the left scatter plot and for not shifting proteins (green) in the right one."}
 knitr::include_graphics(
   c("C:/Users/lenna/OneDrive/Dokumente/2022-topic-03-team-02/report/images/UMAP_sns.png","C:/Users/lenna/OneDrive/Dokumente/2022-topic-03-team-02/report/images/UMAP_lrn.png")
 )
