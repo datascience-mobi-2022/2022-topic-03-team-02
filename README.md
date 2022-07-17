@@ -14,7 +14,7 @@ All of our analysis steps can be found in the file *analysis_rdeep.Rmd* located 
 5. Developing linare regression model and comparison of results
 <br>
 
-The report can be found as .pdf and .Rmd files in the *report* folder and includes methods, results and discussion next to the analysis steps. Furthermore, our GitHub includes folders containing our meeting protocolls (*meetings*) and all files regarding the project proposal (*project proposal*). 
+The report can be found as .pdf and .Rmd files in the *report* folder and includes methods, results and discussion next to the analysis steps. Furthermore, our GitHub repository includes folders containing our meeting protocolls (*meetings*) and all files regarding the project proposal (*project proposal*). 
 
 
 
