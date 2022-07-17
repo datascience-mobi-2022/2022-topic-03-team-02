@@ -151,7 +151,7 @@ counter == 0 # must be TRUE
 
 ## normalize protein amount per fraction
 
-In the second normalization step, we want to set every protein's amount within one replicate to be 100 per conditions. For example, the protein represented by row 1 has a sum over all 25 fractions of 100 in Ctrl_Rep1. To archive this, we begin with building 6 smaller data frames for every replicate of each condition.
+In the second normalization step, we want to set every protein's amount within one replicate to be 100 per condition. For example, the protein represented by row 1 has a sum over all 25 fractions of 100 in Ctrl_Rep1. To archive this, we begin with building 6 smaller data frames for every replicate of each condition.
 
 ```{r}
 # create df that contains all rows of control replicate 1
@@ -635,6 +635,7 @@ df_rnase2 <- df_normalized[,grep("RNase_Rep2", colnames(df_normalized))]
 df_rnase3 <- df_normalized[,grep("RNase_Rep3", colnames(df_normalized))]
 ```
 
+Now, we fit the function from above so it identifies the global maxima of the 6 replicates for every protein.
 ```{r}
 find_global_maxima <- function(df) {
   
@@ -693,7 +694,9 @@ find_global_maxima <- function(df) {
 }
 ```
 
+Last, we can apply the function on our 6 data sets (6 replicates) in order to find all global maxima and combine them in `df_global_maxima_rep`.
 ```{r}
+# apply function on data
 df_ctrl1_global_maxima <- find_global_maxima(df_ctrl1)
 df_ctrl2_global_maxima <- find_global_maxima(df_ctrl2)
 df_ctrl3_global_maxima <- find_global_maxima(df_ctrl3)
@@ -701,6 +704,7 @@ df_rnase1_global_maxima <- find_global_maxima(df_rnase1)
 df_rnase2_global_maxima <- find_global_maxima(df_rnase2)
 df_rnase3_global_maxima <- find_global_maxima(df_rnase3)
 
+# save all global maxima of every replicate in one df
 df_global_maxima_rep <-
   cbind(
     df_ctrl1_global_maxima,
@@ -1187,6 +1191,7 @@ length(sig_dif_proteins_index) # index of proteins with significant t test (comb
 
 ## significant difference of protein amount at the global maximum (replicates)
 
+Here, we are going to perform the same analysis as above (significant difference of protein amount at the global maximum (combined)), but with the not combined data. This means, we are using the normalized but not combined data for global maxima as well as protein amounts. Above, we used the normalized and combined data for global maxima. 
 ```{r}
 pval_rep <- c()
 
@@ -1220,6 +1225,7 @@ length(sig_dif_proteins_index_rep) # index of proteins with significant t test (
 
 ## RNA-dependent proteins
 
+As stated above, R-DeePs must meet both criteria. Therefore, we can identify R-DeePs in our dataset by computing the intersect between proteins with significant shift and proteins with significant difference in protein amount. Here, we computed this intersect once for the results using combined data for global maxima and once using the not combined data.
 ```{r}
 # combined values
 rdeep <- c(intersect(sig_dif_proteins, shift_proteins))
@@ -1243,6 +1249,7 @@ sum(rownames(df_normalized)[rdeep_index] != rdeep)
 sum(rownames(df_normalized)[rdeep_index_rep] != rdeep_rep)
 ```
 
+We decided to use the R-DeePs computed with replicates values only as our results (657).
 ```{r}
 df_rdeep <- data.frame(row.names = rdeep_rep, index = rdeep_index_rep)
 #saveRDS(df_rdeep, file = "RDeeP_HeLa_Mitosis_rdeep.rds")
@@ -1337,19 +1344,6 @@ ggplot(df_umap, aes(x = V1, y = V2, color = rdeep)) +
   geom_point(alpha = alpha2) +
   ggtitle("UMAP of normalized and combined data")
 ```
-
-```{r}
-plot1 <- ggplot(df_umap, aes(x = V1, y = V2, color = shift)) +
-  geom_point(alpha = alpha1) +
-  ggtitle("UMAP of normalized and combined data")
-
-plot2 <- ggplot(df_umap, aes(x = V1, y = V2, color = rdeep)) +
-  geom_point(alpha = alpha2) +
-  ggtitle("UMAP of normalized and combined data")
-
-cowplot::plot_grid(plot1, plot2, labels = "AUTO")
-```
-
 
 We can do the same for pca.
 ```{r}
@@ -1830,3 +1824,77 @@ x2 <- c(intersect(shift_proteins_l, sig_dif_proteins_rep))
 x3 <- c(x1, x2)
 length(unique(x3))
 ```
+
+There is a difference visible when considering local maxima as well in the way we did above.
+
+
+
+# final presentation
+
+
+## plots selection criteria
+
+```{r}
+df_plot_ctrl <- as.data.frame(t(df_normalized_combined)[1:25, ])
+df_plot_ctrl$fraction <- 1:25
+
+df_plot_rnase <- as.data.frame(t(df_normalized_combined)[26:50, ])
+df_plot_rnase$fraction <- 1:25
+```
+
+```{r}
+plot1 <- ggplot(df_plot_ctrl, aes(x = fraction, y = RS12_HUMAN)) +
+  geom_line() +
+  geom_point() +
+  geom_vline(xintercept = 17, color = "blue") +
+  geom_vline(xintercept = 5, color = "red") +
+  geom_hline(yintercept = df_plot_rnase$RS12_HUMAN[17], color = "red", linetype = "dotted") +
+  geom_hline(yintercept = df_plot_ctrl$RS12_HUMAN[17], color = "blue", linetype = "dotted") +
+  ggtitle("R-DeeP Ctrl (RS12_HUMAN)") +
+  ylab("Protein amount") + xlab("Fraction")
+
+plot2 <- ggplot(df_plot_rnase, aes(x = fraction, y = RS12_HUMAN)) +
+  geom_line() +
+  geom_point() +
+  geom_vline(xintercept = 17, color = "blue") +
+  geom_vline(xintercept = 5, color = "red") +
+  geom_hline(yintercept = df_plot_rnase$RS12_HUMAN[17], color = "red", linetype = "dotted") +
+  geom_hline(yintercept = df_plot_ctrl$RS12_HUMAN[17], color = "blue", linetype = "dotted") +
+  ggtitle("R-DeeP Ctrl (RS12_HUMAN)") +
+  ggtitle("R-Deep RNase (RS12_HUMAN)") +
+  ylab("Protein amount") + xlab("Fraction")
+
+cowplot::plot_grid(plot1, plot2, labels = "AUTO")
+```
+
+```{r}
+plot1 <- ggplot(df_plot_ctrl, aes(x = fraction, y = CGL_HUMAN)) +
+  geom_line() +
+  geom_point() +
+  geom_vline(xintercept = 8, color = "blue") +
+  geom_vline(xintercept = 8, color = "blue") +
+  geom_hline(yintercept = max(df_plot_rnase$CGL_HUMAN), color = "red", linetype = "dotted") +
+  geom_hline(yintercept = max(df_plot_ctrl$CGL_HUMAN), color = "blue", linetype = "dotted") +
+  ggtitle("non R-DeeP Ctrl (CGL_HUMAN)") +
+  ylab("Protein amount") + xlab("Fraction")
+
+plot2 <- ggplot(df_plot_rnase, aes(x = fraction, y = CGL_HUMAN)) +
+  geom_line() +
+  geom_point() +
+  geom_vline(xintercept = 8, color = "red") +
+  geom_vline(xintercept = 8, color = "red") +
+  geom_hline(yintercept = max(df_plot_rnase$CGL_HUMAN), color = "red", linetype = "dotted") +
+  geom_hline(yintercept = max(df_plot_ctrl$CGL_HUMAN), color = "blue", linetype = "dotted") +
+  ggtitle("non R-Deep RNase (CGL_HUMAN)") +
+  ylab("Protein amount") + xlab("Fraction")
+
+cowplot::plot_grid(plot1, plot2, labels = "AUTO")
+```
+
+
+
+
+
+
+
+
