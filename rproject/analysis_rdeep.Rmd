@@ -1830,3 +1830,77 @@ x2 <- c(intersect(shift_proteins_l, sig_dif_proteins_rep))
 x3 <- c(x1, x2)
 length(unique(x3))
 ```
+
+
+
+
+
+# final presentation
+
+
+## plots selection criteria
+
+```{r}
+df_plot_ctrl <- as.data.frame(t(df_normalized_combined)[1:25, ])
+df_plot_ctrl$fraction <- 1:25
+
+df_plot_rnase <- as.data.frame(t(df_normalized_combined)[26:50, ])
+df_plot_rnase$fraction <- 1:25
+```
+
+```{r}
+plot1 <- ggplot(df_plot_ctrl, aes(x = fraction, y = RS12_HUMAN)) +
+  geom_line() +
+  geom_point() +
+  geom_vline(xintercept = 17, color = "blue") +
+  geom_vline(xintercept = 5, color = "red") +
+  geom_hline(yintercept = df_plot_rnase$RS12_HUMAN[17], color = "red", linetype = "dotted") +
+  geom_hline(yintercept = df_plot_ctrl$RS12_HUMAN[17], color = "blue", linetype = "dotted") +
+  ggtitle("R-DeeP Ctrl (RS12_HUMAN)") +
+  ylab("Protein amount") + xlab("Fraction")
+
+plot2 <- ggplot(df_plot_rnase, aes(x = fraction, y = RS12_HUMAN)) +
+  geom_line() +
+  geom_point() +
+  geom_vline(xintercept = 17, color = "blue") +
+  geom_vline(xintercept = 5, color = "red") +
+  geom_hline(yintercept = df_plot_rnase$RS12_HUMAN[17], color = "red", linetype = "dotted") +
+  geom_hline(yintercept = df_plot_ctrl$RS12_HUMAN[17], color = "blue", linetype = "dotted") +
+  ggtitle("R-DeeP Ctrl (RS12_HUMAN)") +
+  ggtitle("R-Deep RNase (RS12_HUMAN)") +
+  ylab("Protein amount") + xlab("Fraction")
+
+cowplot::plot_grid(plot1, plot2, labels = "AUTO")
+```
+
+```{r}
+plot1 <- ggplot(df_plot_ctrl, aes(x = fraction, y = CGL_HUMAN)) +
+  geom_line() +
+  geom_point() +
+  geom_vline(xintercept = 8, color = "blue") +
+  geom_vline(xintercept = 8, color = "blue") +
+  geom_hline(yintercept = max(df_plot_rnase$CGL_HUMAN), color = "red", linetype = "dotted") +
+  geom_hline(yintercept = max(df_plot_ctrl$CGL_HUMAN), color = "blue", linetype = "dotted") +
+  ggtitle("non R-DeeP Ctrl (CGL_HUMAN)") +
+  ylab("Protein amount") + xlab("Fraction")
+
+plot2 <- ggplot(df_plot_rnase, aes(x = fraction, y = CGL_HUMAN)) +
+  geom_line() +
+  geom_point() +
+  geom_vline(xintercept = 8, color = "red") +
+  geom_vline(xintercept = 8, color = "red") +
+  geom_hline(yintercept = max(df_plot_rnase$CGL_HUMAN), color = "red", linetype = "dotted") +
+  geom_hline(yintercept = max(df_plot_ctrl$CGL_HUMAN), color = "blue", linetype = "dotted") +
+  ggtitle("non R-Deep RNase (CGL_HUMAN)") +
+  ylab("Protein amount") + xlab("Fraction")
+
+cowplot::plot_grid(plot1, plot2, labels = "AUTO")
+```
+
+
+
+
+
+
+
+
