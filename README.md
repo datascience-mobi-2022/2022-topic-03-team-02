@@ -1,4 +1,11 @@
 # Data Analysis Project 2022: Topic 03 Team 2 - Proteome-wide Screen for RNA-dependent Proteins
+
+>Supervisor: Dr. Maïwen Caudron-Herger
+>
+>Tutor: Niklas Engel
+>
+>Students: Michel Tarnow, Michèle Bennek, Lennart Müller, Sebastian Rickert
+
 Proteins and protein complexes whose interactions are linked to RNAs are called RNA-dependent proteins (R-DeePs). These protein-RNA-interactions can be either indirect or direct, making RNA-binding proteins (RBPs) a subgroup of R-DeePs. Some RBPs' malfunction has been associated with human diseases, e.g. cancer or Alzheimer's disease. A proteom-wide screen for RNA-dependent proteins could help identifying new R-DeeP candidates. Therefore, studies based on the obtained results could reveal more information about RNA and protein functions linked to human diseases associated with RBPs' malfunction. 
 <br>
 <br>
